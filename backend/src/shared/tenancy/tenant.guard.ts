@@ -29,6 +29,25 @@ export class TenantGuard implements CanActivate {
     if (isPublic || !required) return true;
 
     const req = ctx.switchToHttp().getRequest<Request & { user?: SessionPrincipal }>();
+    const user = req.user;
+    if (!user) throw new AppException(AppErrorCode.UNAUTHENTICATED);
+
+    // Role-aware tenant resolution: SUPER_ADMIN bypasses (uses the system pool); TRAINER/COACH
+    // derive their own org; only PLAYER carries an X-Active-Context (subject × trainer) pair.
+    if (user.role === 'SUPER_ADMIN') return true;
+    if (user.role === 'TRAINER') {
+      const tid = await this.resolver.resolveTrainerSelf(user.id);
+      if (!tid) throw new AppException(AppErrorCode.TENANT_FORBIDDEN);
+      this.cls.set(CTX_KEYS.activeTrainerId, tid);
+      return true;
+    }
+    if (user.role === 'COACH') {
+      const tid = await this.resolver.resolveCoachTrainer(user.id);
+      if (!tid) throw new AppException(AppErrorCode.TENANT_FORBIDDEN);
+      this.cls.set(CTX_KEYS.activeTrainerId, tid);
+      return true;
+    }
+
     const header = req.headers['x-active-context'];
     const raw = Array.isArray(header) ? header[0] : header;
     if (!raw) {
@@ -42,9 +61,6 @@ export class TenantGuard implements CanActivate {
         details: [{ field: 'X-Active-Context', message: 'expected "<subjectProfileId>:<trainerId>"' }],
       });
     }
-
-    const user = req.user;
-    if (!user) throw new AppException(AppErrorCode.UNAUTHENTICATED);
 
     const res = await this.resolver.resolve(subjectProfileId, trainerId, user.id);
     if (!res.ok) {

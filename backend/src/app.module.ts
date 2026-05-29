@@ -25,6 +25,7 @@ import { AuthModule } from '@modules/auth/auth.module';
 import { UsersModule } from '@modules/users/users.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { ContextModule } from '@modules/context/context.module';
+import { SharelinksModule } from '@modules/sharelinks/sharelinks.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ContextModule } from '@modules/context/context.module';
     UsersModule,
     ProfilesModule,
     ContextModule,
+    SharelinksModule,
   ],
   providers: [
     // Rate limiting runs first (FR-007).

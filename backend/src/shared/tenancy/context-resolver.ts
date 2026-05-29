@@ -1,6 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq } from 'drizzle-orm';
-import { playerProfiles, trainerPlayerAssociations } from '@shared/database/schema';
+import { DRIZZLE } from '@shared/database/drizzle.constants';
+import { DrizzleDB } from '@shared/database/drizzle.provider';
+import {
+  coachProfiles,
+  playerProfiles,
+  trainerCoachAssociations,
+  trainerProfiles,
+  trainerPlayerAssociations,
+} from '@shared/database/schema';
 import { TenancyService } from './tenancy.service';
 
 export type ContextResolution =
@@ -15,7 +23,33 @@ export type ContextResolution =
  */
 @Injectable()
 export class ContextResolver {
-  constructor(private readonly tenancy: TenancyService) {}
+  constructor(
+    private readonly tenancy: TenancyService,
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+  ) {}
+
+  /** A trainer's own tenant = their trainer_profiles.id (P-1). trainer_profiles is not RLS-scoped. */
+  async resolveTrainerSelf(userId: string): Promise<string | null> {
+    const [row] = await this.db
+      .select({ id: trainerProfiles.id })
+      .from(trainerProfiles)
+      .where(eq(trainerProfiles.userId, userId))
+      .limit(1);
+    return row?.id ?? null;
+  }
+
+  /** A coach's tenant = their single active trainer (BR-003). Reads an RLS table → runAsUser. */
+  resolveCoachTrainer(userId: string): Promise<string | null> {
+    return this.tenancy.runAsUser(async (tx) => {
+      const [row] = await tx
+        .select({ trainerId: trainerCoachAssociations.trainerId })
+        .from(trainerCoachAssociations)
+        .innerJoin(coachProfiles, eq(coachProfiles.id, trainerCoachAssociations.coachProfileId))
+        .where(and(eq(coachProfiles.userId, userId), eq(trainerCoachAssociations.status, 'active')))
+        .limit(1);
+      return row?.trainerId ?? null;
+    });
+  }
 
   resolve(subjectProfileId: string, trainerId: string, userId: string): Promise<ContextResolution> {
     return this.tenancy.runAsUser(async (tx): Promise<ContextResolution> => {
