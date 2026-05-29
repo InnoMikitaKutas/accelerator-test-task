@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -39,4 +39,13 @@ import { DRIZZLE, PG_POOL, SYSTEM_DRIZZLE, SYSTEM_PG_POOL } from './drizzle.cons
   ],
   exports: [DRIZZLE, PG_POOL, SYSTEM_DRIZZLE, SYSTEM_PG_POOL],
 })
-export class DrizzleModule {}
+export class DrizzleModule implements OnModuleDestroy {
+  constructor(
+    @Inject(PG_POOL) private readonly pool: Pool,
+    @Inject(SYSTEM_PG_POOL) private readonly systemPool: Pool,
+  ) {}
+
+  async onModuleDestroy(): Promise<void> {
+    await Promise.all([this.pool.end(), this.systemPool.end()]);
+  }
+}

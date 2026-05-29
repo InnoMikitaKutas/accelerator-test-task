@@ -1,4 +1,4 @@
-import { Global, Module, OnApplicationShutdown } from '@nestjs/common';
+import { Global, Inject, Module, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { REDIS } from './redis.constants';
@@ -15,10 +15,10 @@ import { REDIS } from './redis.constants';
   ],
   exports: [REDIS],
 })
-export class RedisModule implements OnApplicationShutdown {
-  constructor() {}
-  async onApplicationShutdown() {
-    // ioredis connections are closed by Nest on shutdown when registered as providers with
-    // a disconnect hook; explicit cleanup can be added here if needed.
+export class RedisModule implements OnModuleDestroy {
+  constructor(@Inject(REDIS) private readonly redis: Redis) {}
+
+  async onModuleDestroy(): Promise<void> {
+    await this.redis.quit();
   }
 }
