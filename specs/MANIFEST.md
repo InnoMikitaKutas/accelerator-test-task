@@ -12,8 +12,8 @@ manage children, and coaches are exclusive to one trainer. Delivered as 8 epics;
 | File | Purpose | Depends On | Last Updated |
 |------|---------|------------|--------------|
 | architect-architecture.md | System design, components, data flow | - | 2026-05-29 (TASK-001, +ctx-switch refinement) |
-| api-designer-spec.md | Endpoints, schemas, authentication | architect-architecture | - |
-| frontend-design-spec.md | Pages, components, state management | architect-architecture, api-designer-spec | - |
+| api-designer-spec.md | Endpoints, schemas, authentication | architect-architecture | 2026-05-29 (TASK-001, all 8 modules + ctx-switch) |
+| frontend-design-spec.md | Pages, components, state management | architect-architecture, api-designer-spec | 2026-05-29 (TASK-001, design system + all epic components) |
 | docs-generator-implementation.md | Build process, deployment, tooling | - | - |
 
 ## Key Decisions
@@ -23,6 +23,8 @@ manage children, and coaches are exclusive to one trainer. Delivered as 8 epics;
 - **Auth**: JWT access+refresh with rotation/reuse-detection, in httpOnly+SameSite cookies + CSRF double-submit. argon2id hashing. Email verification required before login. *(TASK-001)*
 - **Async/timing**: BullMQ on Redis for timed expiries (approval 48h, impersonation 1h, tokens) + transactional outbox for cross-epic side effects. *(TASK-001)*
 - **Minors**: all under-18 parent-managed (no independent minor accounts). *(TASK-001)*
+- **API contract**: REST under `/api/v1` (URI versioning), UUID resource IDs, **layered controllers (no CQRS)**. Tokens in httpOnly cookies (never response bodies); CSRF via `X-CSRF-Token`; active context via `X-Active-Context` header. Stable `errorCode` catalog drives client branching; keyset (cursor) pagination on all lists (NFR-002). Public sign-up is ShareLink-mediated (`POST /join/:code`) — no open `POST /auth/register` (BR-002). *(TASK-001, api-designer-spec)*
+- **UI design**: "Cinder & Chalk" — athletic performance-editorial. Fixed graphite/chalk neutral base + **variable per-trainer brand accent** (`--brand` from `primaryColorHex`, contrast-safe variants derived at runtime for WCAG AA). Type = Archivo / Archivo Expanded / Spline Sans Mono. Memorable element = the **Channel Bar** context switcher (subject + trainer "lane" tabs, "re-tune" transition); zone↔theme rule makes the no-merged-view model visible (neutral account layer vs. brand-tinted channel). *(TASK-001, frontend-design-spec)*
 
 ## Tech Stack
 
