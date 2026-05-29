@@ -11,7 +11,7 @@ manage children, and coaches are exclusive to one trainer. Delivered as 8 epics;
 
 | File | Purpose | Depends On | Last Updated |
 |------|---------|------------|--------------|
-| architect-architecture.md | System design, components, data flow | - | 2026-05-29 (TASK-001, +ctx-switch refinement) |
+| architect-architecture.md | System design, components, data flow | - | 2026-05-29 (TASK-001, +ctx-switch refinement, +plan review) |
 | api-designer-spec.md | Endpoints, schemas, authentication | architect-architecture | 2026-05-29 (TASK-001, all 8 modules + ctx-switch) |
 | frontend-design-spec.md | Pages, components, state management | architect-architecture, api-designer-spec | 2026-05-29 (TASK-001, design system + all epic components) |
 | docs-generator-implementation.md | Build process, deployment, tooling | - | - |

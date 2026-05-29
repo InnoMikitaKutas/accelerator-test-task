@@ -236,3 +236,77 @@ channel-labeled, click-to-switch — compliant with BR-005 (an alert list is not
 
 **Dependency.** The **minor-login model** (separate brainstorm) gates the child auth path and whether
 a logged-in child sees only the per-context zone (no Family/Account zone, fixed subject).
+
+---
+
+## [TASK-001] Implementation-Plan Architecture Review (2026-05-29)
+
+Reviews `tasks/TASK-001/writing-plans-plan.md` against this spec before implementation. **Bottom line: Phases 0–3 (scaffold, schema, shared-auth, Auth module) are sound and unblocked. Three HIGH risks must be resolved before the tenancy/parent/child phases they affect — all three are real (confirmed by the plan's own text), not hypothetical.** The layered structure, schema, DB-enforced invariants (partial-unique indexes for BR-003/BR-004), error envelope, token rotation, and transactional outbox are validated as correct.
+
+### Locked-decision verdicts
+
+| ID | Decision | Verdict | Note |
+|----|----------|---------|------|
+| **P-1** | `trainerId` = `trainer_profiles.id` | ✅ Sound | A trainer human now has **two** ids in the contract — `trainer_profiles.id` (tenant key, used by branding/sharelinks/associations/context/`UserListQueryDto.trainerId`) and `users.id` (impersonation). Document the canonical meaning at every `trainerId` field to prevent IDOR/confusion (R8). |
+| **P-2** | ShareLink-mediated registration | ✅ Sound | Matches BR-002 + spec. But `POST /join/:code` (new-user branch) is a **public, session-creating** surface — needs CSRF handling + throttling (R6). |
+| **P-3** | Cookie-only tokens | ✅ Sound | **Deployment constraint:** `SameSite=Strict` cookie auth requires the SPA and API to be **same-site** (same registrable domain / subdomains). Cross-domain split forces `SameSite=None;Secure`, weakening CSRF posture. Record as a deploy invariant. |
+| **P-4** | Shared-per-child Best Times (no `trainerId` on `availability`) | ⚠️ Client-gated | Plan correctly defers build until client confirms (BR-007 admits per-coach). Note: `availability` has **no RLS backstop** (intentional — Zone-2/shared) → authorization is service-layer-only; a bug there leaks a child's schedule. Acceptable for low-sensitivity availability; keep the ownership/association gate airtight (R10). |
+| **P-5** | Minor-login (constrained child `User`) | ❌ **Not ready** | Under-specified and internally inconsistent — see R3 (HIGH). |
+| **P-6** | Local dev infra | ✅ Sound | Redis is present via `docker-compose`, so BullMQ delayed jobs work in dev. No conflict with the "adopt Redis day one" recommendation. |
+
+### Risk register (prioritized)
+
+#### HIGH — resolve before the affected phase
+
+**R1 · RLS blocks non-request-scoped execution (system + Super Admin paths).** *(affects Tasks 1.9, 2.10, 2.15, 4.1, 8.4, 12.1)*
+`FORCE ROW LEVEL SECURITY` (Task 1.9) subjects every role to the policies, and an unset `app.current_trainer_id` GUC fails **closed** (zero rows). But these paths run with **no** trainer GUC: the **outbox relay** and the **48h approval auto-deny job** (updates `child_purchase_approvals`, an RLS table), the **seed script** (inserts `share_links`), and **Super Admin `GET /users?trainerId=…`** (joins `trainer_player_associations`). All will silently no-op/return empty. The plan defers this to "see Phase 2.10," but Phase 2.10 only implements `runScoped(trainerId)` — there is no elevated path.
+**Resolution:** introduce a **second DB role with `BYPASSRLS`** for system workers (outbox, scheduled expiry jobs, seed) and for Super Admin requests; expose it as a distinct pool/`SystemDb` provider used only by sanctioned services. Alternatively, jobs that target a single tenant `SET LOCAL app.current_trainer_id` per processed row. Decide and fold into Tasks 1.9 / 2.10 / 2.15.
+
+**R2 · RLS single-key is too coarse for the account (Zone-1) zone.** *(affects Tasks 2.11, 6.1, 8.2–8.4; root-shared with R1)*
+The context-switching design defines **Zone-1 (Family/Account) as global, spanning trainers** — yet its data lives in `trainer_player_associations` and `child_purchase_approvals`, which are RLS-keyed to a **single** `trainerId`. So `GET /me/contexts`, `GET /family`, `GET /family/approvals`, child↔trainer management, **and `TenantGuard`'s own context-resolution read** legitimately span trainers or run *before* a trainer is known. The plan calls these "sanctioned unscoped reads" (lines 1548, 1881) — but under FORCE RLS an unscoped read returns **zero rows**. The design is self-contradictory as written.
+**Resolution:** make the policies **dual-axis**. Add a per-request GUC `app.current_user_id` (set in CLS by `JwtAuthGuard`, before `TenantGuard`), and extend each affected policy with an owning-user clause, e.g. for `trainer_player_associations`:
+```sql
+USING (
+  trainer_id = current_setting('app.current_trainer_id', true)::uuid
+  OR EXISTS (SELECT 1 FROM player_profiles p
+             WHERE p.id = player_profile_id
+               AND current_setting('app.current_user_id', true)::uuid IN (p.user_id, p.parent_user_id))
+)
+```
+and for `child_purchase_approvals`: `OR parent_user_id = current_setting('app.current_user_id', true)::uuid`. This makes `TenantGuard`'s resolution read a *user-scoped* (RLS-allowed) read and unblocks all Zone-1 operations without bypass. Fold into Tasks 1.9 (policies), 2.1/2.8 (set `app.current_user_id`), 2.11 (resolution).
+
+**R3 · Minor-login is half-specified (P-5).** *(affects Tasks 2.8, 2.11, 7.4, 8.1, 8.4)*
+The whole child path assumes a child can authenticate: `MinorAccountGuard` reads `user.isMinor`, child sessions create purchase requests, and `POST /join` blocks a *logged-in* child. But **`createChild` (8.1) creates only a `PlayerProfile`** — no child `User`, and **no credential-provisioning endpoint exists in either spec** (how does a child get a password?). `JwtAuthGuard` even hardcodes `managedByParentUserId: null` (line 1438). So the minor actor is never created and the guard can't reliably gate on parentage.
+**Resolution (product + arch):** decide child-login scope for MVP.
+- *If in-MVP:* add child-`User` creation in `createChild` (or an explicit "enable login for this child" action) **and** a parent-driven credential issuance flow (parent sets/sends child password); load `isMinor`/`managedByParentUserId` into claims + principal.
+- *If deferred:* stub `MinorAccountGuard`, drop the child-session branches of `POST /join` (7.4) and `purchase-requests` (8.4) from Epic-01 scope, and reconcile FR-025/026. Either way, stop the plan from half-building it.
+
+#### MEDIUM
+
+**R4 · `/join` auto-login vs `EmailVerifiedGuard`.** The spec logs a new registrant in (sets cookies) at `POST /join`, but `EmailVerifiedGuard` then blocks every subsequent request with `EMAIL_NOT_VERIFIED` (D-1/FR-003) → "logged in but can do nothing." Reconcile: either **don't auto-login** on register (issue verification, no session), or define an **unverified-allowed route allowlist** (`me`, `resend-verification`, `verify-email`, `logout`). Decide before Task 7.4.
+
+**R5 · Refresh-rotation multi-tab race.** Cookies are shared across tabs; the design explicitly wants multi-tab. With one current-`jti` per family, two tabs hitting `/auth/refresh` near-simultaneously make the 2nd present an already-rotated `jti` → reuse-detection revokes the whole family → spurious logout. Add a short **grace window** (accept the immediately-previous `jti` for ~10s) or a per-family refresh lock. Fold into Task 2.5.
+
+**R6 · CSRF + throttle on public `POST /join`.** The new-user branch has no prior session, so no `csrf` cookie exists to double-submit. Either **exempt** the unauthenticated register branch from CSRF or **seed a `csrf` cookie on `GET /join/:code`** resolve. Also throttle `/join` (NFR-004: 100 concurrent registrations + abuse). Fold into Tasks 2.7 / 7.5.
+
+**R7 · Timed side-effects: pick one atomic pattern.** The plan mixes the **transactional outbox** (atomic with the DB tx) with **direct in-request BullMQ enqueue** for the 48h approval and 1h impersonation expiries (not atomic — a Redis blip after commit drops the expiry). Standardize: schedule timed jobs **via the outbox/a periodic `expiresAt` sweep**, or accept the gap with a reconciliation sweep. Fold into Tasks 2.15 / 8.4 / 10.1.
+
+#### LOW (capture, fix opportunistically)
+
+- **R8 · Identifier hygiene:** document `trainerId = trainer_profiles.id` at every contract field (see P-1).
+- **R9 · Keyset indexes:** add composite `(created_at, id)` indexes on every listed table; the cursor must encode the **active sort key** (or restrict keyset to `createdAt` and use offset for `lastLoginAt` sort, which `UserListQueryDto` allows).
+- **R10 · Profile reads:** `*_profiles` tables have no RLS — ensure every profile-by-id read passes an ownership/association gate (no backstop).
+- **R11 · Search scaling:** `ILIKE '%term%'` can't use a btree index; fine at 10k (NFR-002), add `pg_trgm` for scale.
+- **R12 · Logout token source:** read the refresh `family` from the `rt` cookie, not the access claim, so logout still revokes when the access token has expired.
+- **FK integrity:** add `.references()` on `player_profiles.parent_user_id`, `users.managed_by_parent_user_id` (self-ref), and `trainer_player_associations.via_sharelink_id`.
+
+### Decisions needed from product/client (gate specific phases)
+
+1. **Minor login in MVP?** (R3) — gates Phases 7–8 child branches.
+2. **Best Times shared-per-child vs per-coach?** (P-4) — gates Phase 9.
+3. **`/join` auto-login UX** (R4) — gates Phase 7.4.
+4. Confirm the 7 inferred email templates (Q-01.04) and refresh TTL (Q-01.07).
+
+### What's unblocked now
+
+Phases **0–3** (scaffold → schema → shared infra → Auth) can proceed immediately, with two cheap forward-edits folded in early: add the `app.current_user_id` CLS GUC (R2) when building `JwtAuthGuard`/`TenancyService`, and stand up the `BYPASSRLS` system DB role (R1) when building the Drizzle providers — both are far cheaper to include now than to retrofit. R3/R4/P-4 block only their specific later phases and need a product answer first.
