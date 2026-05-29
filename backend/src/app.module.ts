@@ -26,6 +26,8 @@ import { UsersModule } from '@modules/users/users.module';
 import { ProfilesModule } from '@modules/profiles/profiles.module';
 import { ContextModule } from '@modules/context/context.module';
 import { SharelinksModule } from '@modules/sharelinks/sharelinks.module';
+import { BrandingModule } from '@modules/branding/branding.module';
+import { ImpersonationModule } from '@modules/impersonation/impersonation.module';
 
 @Module({
   imports: [
@@ -54,6 +56,8 @@ import { SharelinksModule } from '@modules/sharelinks/sharelinks.module';
     ProfilesModule,
     ContextModule,
     SharelinksModule,
+    BrandingModule,
+    ImpersonationModule,
   ],
   providers: [
     // Rate limiting runs first (FR-007).

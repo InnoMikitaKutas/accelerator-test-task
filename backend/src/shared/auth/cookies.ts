@@ -25,6 +25,11 @@ export function setAuthCookies(res: Response, config: ConfigService, at: string,
   });
 }
 
+/** Sets only the access cookie (impersonation — short-lived, no refresh rotation). */
+export function setAccessCookie(res: Response, config: ConfigService, at: string, maxAgeSec: number): void {
+  res.cookie('at', at, { ...baseCookieOpts(config), maxAge: maxAgeSec * 1000 });
+}
+
 export function clearAuthCookies(res: Response, config: ConfigService): void {
   const base = baseCookieOpts(config);
   res.clearCookie('at', base);
