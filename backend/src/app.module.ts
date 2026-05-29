@@ -23,6 +23,7 @@ import { TenantGuard } from '@shared/tenancy/tenant.guard';
 import { MinorAccountGuard } from '@shared/auth/guards/minor-account.guard';
 import { AuthModule } from '@modules/auth/auth.module';
 import { UsersModule } from '@modules/users/users.module';
+import { ProfilesModule } from '@modules/profiles/profiles.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { UsersModule } from '@modules/users/users.module';
     // Feature modules
     AuthModule,
     UsersModule,
+    ProfilesModule,
   ],
   providers: [
     // Rate limiting runs first (FR-007).
