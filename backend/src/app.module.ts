@@ -29,6 +29,7 @@ import { SharelinksModule } from '@modules/sharelinks/sharelinks.module';
 import { BrandingModule } from '@modules/branding/branding.module';
 import { ImpersonationModule } from '@modules/impersonation/impersonation.module';
 import { AvailabilityModule } from '@modules/availability/availability.module';
+import { FamilyModule } from '@modules/family/family.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { AvailabilityModule } from '@modules/availability/availability.module';
     BrandingModule,
     ImpersonationModule,
     AvailabilityModule,
+    FamilyModule,
   ],
   providers: [
     // Rate limiting runs first (FR-007).

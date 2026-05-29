@@ -25,6 +25,7 @@ export enum AppErrorCode {
   SHARELINK_USED = 'SHARELINK_USED',
   CONTEXT_INACTIVE = 'CONTEXT_INACTIVE',
   APPROVAL_EXPIRED = 'APPROVAL_EXPIRED',
+  APPROVAL_ALREADY_DECIDED = 'APPROVAL_ALREADY_DECIDED',
   FILE_TOO_LARGE = 'FILE_TOO_LARGE',
   UNSUPPORTED_FILE_TYPE = 'UNSUPPORTED_FILE_TYPE',
   RATE_LIMITED = 'RATE_LIMITED',
@@ -111,6 +112,10 @@ export const ERROR_META: Record<AppErrorCode, { status: HttpStatus; message: str
   [AppErrorCode.APPROVAL_EXPIRED]: {
     status: HttpStatus.GONE,
     message: 'This approval request has expired.',
+  },
+  [AppErrorCode.APPROVAL_ALREADY_DECIDED]: {
+    status: HttpStatus.CONFLICT,
+    message: 'This approval request has already been decided.',
   },
   [AppErrorCode.FILE_TOO_LARGE]: {
     status: HttpStatus.PAYLOAD_TOO_LARGE,
