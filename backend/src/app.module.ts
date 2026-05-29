@@ -28,6 +28,7 @@ import { ContextModule } from '@modules/context/context.module';
 import { SharelinksModule } from '@modules/sharelinks/sharelinks.module';
 import { BrandingModule } from '@modules/branding/branding.module';
 import { ImpersonationModule } from '@modules/impersonation/impersonation.module';
+import { AvailabilityModule } from '@modules/availability/availability.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { ImpersonationModule } from '@modules/impersonation/impersonation.module
     SharelinksModule,
     BrandingModule,
     ImpersonationModule,
+    AvailabilityModule,
   ],
   providers: [
     // Rate limiting runs first (FR-007).
