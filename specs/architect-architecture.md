@@ -19,7 +19,7 @@ async processing.
 | Runtime / framework | **NestJS (Node + TypeScript)** | Layered Controller→Service→Repository; matches repo skills. |
 | Database | **PostgreSQL** | M:N relations, field-level GDPR anonymization, transactions, partial indexes, **Row-Level Security**. |
 | Data access | **Drizzle ORM** + `drizzle-kit` migrations | SQL-first, fully typed (user choice). *No first-class `@nestjs/typeorm` equivalent* → provided via a custom module (see Data Access). |
-| Auth tokens | **JWT** access + refresh, **rotation w/ reuse-detection** | Stateless app tier; impersonation token carries `admin_id`; active trainer context in claims. |
+| Auth tokens | **JWT** access + refresh, **rotation w/ reuse-detection** | Stateless app tier; impersonation token carries `admin_id`; active trainer context is **per-request, not a claim** (see Context Switching refinement). |
 | Token transport | **httpOnly + `SameSite` cookies + CSRF tokens** | Best XSS posture; directly satisfies FR-009 (CSRF). Double-submit cookie via `csrf-csrf`. |
 | Password hashing | **argon2id** | NFR-006 (adaptive, industry standard). |
 | File storage | **S3-compatible** (AWS S3; MinIO for dev) behind `StorageService`; **sharp** for thumbnails/resize | Scalable, cloud-portable, owns auto-resize for logos (US-01.14) + photo thumbnails (US-01.11). |
@@ -84,18 +84,23 @@ cannot represent this. Tenant ownership is a `trainerId` discriminator on tenant
 3. **Verification — leakage tests.** Each tenant-owned table has an integration test asserting
    trainer A cannot read/write trainer B's rows. Directly serves the §2 "0% data leakage" metric.
 
-**Request context flow:** `TenantGuard` resolves the active trainer (from JWT claim / context
-switcher header) → stores in `nestjs-cls` → scoped repos read it and the DB GUC is set per
-transaction. The **context switcher** (FR-019) just changes the active `trainerId` in the
-claim/CLS; no data merging ever occurs.
+**Request context flow:** the client sends the active context per request as
+`X-Active-Context: <subjectProfileId>:<trainerId>`; `TenantGuard` **authorizes it on every request**
+(subject owned by the user; the `(subjectProfileId, trainerId)` association is active) → stores
+`{ activeSubjectProfileId, activeTrainerId }` in `nestjs-cls` → scoped repos read `activeTrainerId`
+and the DB GUC is set per transaction, while `activeSubjectProfileId` adds a subject-scope filter.
+The **context switcher** (FR-019) changes only this per-request context — **not** a JWT claim; no
+data merging ever occurs. *(Refined 2026-05-29; supersedes the earlier claim-based sketch — see the
+Context Switching refinement at the end of this TASK-001 section.)*
 
 ### Auth & Session Model
 
 - **Access JWT** (~15 min) + **refresh JWT** (config TTL; default 7d → Q-01.07), both httpOnly
   cookies. Refresh uses **rotation with reuse-detection**: refresh `jti` family tracked in
   Redis; replay of a rotated token revokes the whole family.
-- **Claims:** `sub`, `role`, `emailVerified`, `activeTrainerId`, and for impersonation
-  `impersonatorAdminId` + `impersonationExp`.
+- **Claims:** `sub`, `role`, `emailVerified`, and for impersonation `impersonatorAdminId` +
+  `impersonationExp`. **`activeTrainerId` is deliberately NOT a claim** — active context travels
+  per-request (see the Context Switching refinement at the end of this TASK-001 section).
 - **Guard chain:** `JwtAuthGuard` → `EmailVerifiedGuard` (D-1: blocks unverified, FR-003) →
   `RolesGuard` (FR-008) → `TenantGuard` (resolves/validates trainer context) →
   `MinorAccountGuard` (enforces the child CANNOT-matrix, FR-025).
@@ -114,7 +119,7 @@ Full attribute list in requirements doc §Entities. Relationship/constraint choi
 | Parent ↔ child | Child = `PlayerProfile{ isChild:true, parentUserId }` owned by the parent's `User`. Optional **minor login** = a separate constrained `User{ isMinor:true, managedByParentUserId }` linked to that profile. All minors parent-managed (BR-006/D-2). |
 | Trainer ↔ player | `TrainerPlayerAssociation` **M:N between `TrainerProfile` and `PlayerProfile`** (per-profile, so parent and each child link independently). Carries `viaShareLinkId`, `status`. Core tenancy join. |
 | Trainer ↔ coach | `TrainerCoachAssociation` with **partial unique index** `(coachProfileId) WHERE status='active'` → DB-enforces "one active trainer per coach" (BR-003/FR-029). |
-| Availability subject | Single `Availability` table, `subjectType ∈ {coach,player}` + `subjectId`, `CHECK` constraint. Matches FR-030/FR-039. |
+| Availability subject | Single `Availability` table, `subjectType ∈ {coach,player}` + `subjectId`, `CHECK` constraint. **Best Times = one shared schedule per child (keyed on `subjectId`, no `trainerId`)** per the 2026-05-29 brainstorm; ⚠️ revisit if client wants per-coach (would add `trainerId` + move Best Times to the per-context zone). Matches FR-030/FR-039. |
 | Soft delete | `status`/`deletedAt` columns; queries filter non-deleted; history retained (BR-010). |
 | GDPR delete | In-place anonymization of `User` PII + `UserDeletionLog` row; analytics rows keep FK, render "Deleted User" (BR-010/FR-014). |
 | Tokens | `VerificationToken`/`PasswordResetToken`/refresh `jti` stored **hashed**, with `expiresAt`/`usedAt`. |
@@ -165,10 +170,69 @@ Full attribute list in requirements doc §Entities. Relationship/constraint choi
 
 1. **Tenant-isolation enforcement is convention-driven** (Drizzle won't auto-scope). Mitigated by
    ScopedRepository + RLS + tests, but requires a lint rule banning raw access to tenant tables. **Highest risk.**
-2. **"Separated views" context-switching** needs an explicit UX + data-scoping spec before
-   frontend build (carried over from requirements gap).
+2. **~~"Separated views" context-switching~~ — RESOLVED (2026-05-29).** Designed in
+   `tasks/TASK-001/brainstorming-separated-views-design.md` and folded into the Context Switching
+   refinement below. Open sub-item: confirm Best Times scoping with client (per-child vs per-coach).
 3. **Minor-login data model** (optional constrained child `User` vs profile-only) — confirm with
    product before building `family/` auth paths.
 4. **Email template list** (Q-01.04) still client-owned; interface is ready, contents are not.
 5. **Redis/BullMQ infra** assumed; if the team wants a single-node MVP, switch to the documented
    minimal alternative *before* implementation (changes throttler + scheduler tasks).
+
+---
+
+## [TASK-001] Context Switching & Separated Views — Refinement (2026-05-29)
+
+Refines the **Auth & Session Model** and **Multi-Tenancy** sections above with the agreed design for
+FR-019/FR-027 (multi-trainer separated views). Full UX + rationale live in
+`tasks/TASK-001/brainstorming-separated-views-design.md` (not duplicated here). **This section is
+authoritative** where it differs from the original same-day sketch.
+
+**Context unit.** Active context = a `(subjectProfileId, trainerId)` pair, drawn from that profile's
+*active* associations. BR-004 (M:N per profile) + BR-005 (no unified view) force two axes — one
+cannot capture it. Switching reloads the scoped view; it is never a filter and never merges trainers.
+
+**Three data zones** (define what the context scopes):
+
+| Zone | Scoped by context? | Contains |
+|------|--------------------|----------|
+| Family / Account | ❌ global | parent contact info, children roster, associations, pending approvals, notifications, account settings |
+| Per-subject | subject only | profile basics, skill level, **Best Times** |
+| Per-context `(subject × trainer)` | ✅ full | dashboard, calendar/events, RSVPs, content (E04), tokens/purchases (E05), messages |
+
+**Transport & enforcement — supersedes "context in the JWT claim".**
+- Client sends `X-Active-Context: <subjectProfileId>:<trainerId>` on every scoped request.
+- `TenantGuard` authorizes per request: (a) the subject is owned by the current user (own profile, or a
+  child they parent); (b) the `(subjectProfileId, trainerId)` association exists and is active.
+  Fail → `403 CONTEXT_FORBIDDEN`; association inactive → `410 CONTEXT_INACTIVE` (client bounces to a
+  safe default).
+- On pass: `{ activeSubjectProfileId, activeTrainerId }` → `nestjs-cls`. `activeTrainerId` drives the
+  existing `ScopedRepository` + RLS GUC `app.current_trainer_id`; `activeSubjectProfileId` adds a
+  subject-scope filter. **`activeTrainerId` is removed from JWT claims.**
+- Rationale over the claim sketch: no token re-mint on switch; multi-tab (each tab carries its own
+  context); refresh-rotation untouched.
+
+**Persistence (FR-019).** Client remembers last context (localStorage); server stores a per-user
+default-context preference to seed fresh logins.
+
+**Guard chain.** No new guard — `TenantGuard` gains subject resolution/validation alongside trainer.
+Order unchanged: `JwtAuthGuard → EmailVerifiedGuard → RolesGuard → TenantGuard → MinorAccountGuard`.
+
+**Endpoints (contract owned by `api-designer`):**
+
+| Endpoint / header | Purpose |
+|-------------------|---------|
+| `GET /me/contexts` | Switcher data: subjects → their active trainers, plus `defaultContext`. |
+| `PUT /me/contexts/default` | Persist the user's default-context preference. |
+| `X-Active-Context` header | Per-request active context, validated by `TenantGuard`. |
+
+**Best Times scoping — DECISION + FLAG.** Best Times = **one shared schedule per child** (per-subject
+zone; `Availability` stays keyed on `subjectId`, no `trainerId`). ⚠️ BR-007 ("independent Best-Times
+per trainer") admits a per-coach reading — **confirm with client before building `availability/`**;
+per-coach would add `trainerId` and move Best Times into the per-context zone.
+
+**Cross-context notifications.** Approval/RSVP alerts surface in the global account zone,
+channel-labeled, click-to-switch — compliant with BR-005 (an alert list is not a merged data view).
+
+**Dependency.** The **minor-login model** (separate brainstorm) gates the child auth path and whether
+a logged-in child sees only the per-context zone (no Family/Account zone, fixed subject).
