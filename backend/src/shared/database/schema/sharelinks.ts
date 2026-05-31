@@ -37,5 +37,7 @@ export const shareLinks = pgTable(
   (t) => [
     uniqueIndex('share_links_code_unique').on(t.code),
     index('share_links_trainer_idx').on(t.trainerId),
+    // Backs keyset pagination on (created_at, id) — mirrors users_created_id_idx (L1/NFR-002).
+    index('share_links_created_id_idx').on(t.createdAt, t.id),
   ],
 );

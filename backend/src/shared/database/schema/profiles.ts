@@ -7,7 +7,9 @@ import {
   integer,
   timestamp,
   index,
+  check,
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { genderEnum, skillLevelEnum } from './enums';
 import { users } from './users';
 
@@ -64,5 +66,7 @@ export const playerProfiles = pgTable(
   (t) => [
     index('player_profiles_user_idx').on(t.userId),
     index('player_profiles_parent_idx').on(t.parentUserId),
+    // BR-013: enforce the 1..18 child-age range at the DB (DTO/service already validate it) (L2).
+    check('player_age_range', sql`age IS NULL OR (age BETWEEN 1 AND 18)`),
   ],
 );

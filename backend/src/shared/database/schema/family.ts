@@ -27,7 +27,11 @@ export const childPurchaseApprovals = pgTable(
     parentNote: varchar('parent_note', { length: 280 }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('approvals_parent_status_exp_idx').on(t.parentUserId, t.status, t.expiresAt)],
+  (t) => [
+    index('approvals_parent_status_exp_idx').on(t.parentUserId, t.status, t.expiresAt),
+    // Backs keyset pagination on (requested_at, id) in listApprovals (L1/NFR-002).
+    index('approvals_requested_id_idx').on(t.requestedAt, t.id),
+  ],
 );
 
 export const childTokenSettings = pgTable('child_token_settings', {
