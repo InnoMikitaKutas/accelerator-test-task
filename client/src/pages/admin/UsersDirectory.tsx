@@ -4,8 +4,13 @@ import { DataTable, type Column } from '@/components/ui/DataTable';
 import { StatusBadge, type BadgeTone } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import { useNavigate } from 'react-router-dom';
 import { usePaginated } from '@/lib/pagination';
 import { useListUsersQuery, useReactivateUserMutation } from '@/features/users/api';
+import { useStartImpersonationMutation } from '@/features/impersonation/api';
+import { useAppDispatch } from '@/app/hooks';
+import { pushToast } from '@/features/toasts/toastsSlice';
+import { parseApiError } from '@/services/apiError';
 import type { Role, UserResponse, UserStatus } from '@/types/api';
 import { RowMenu } from '@/components/admin/RowMenu';
 import { CreateTrainerModal } from '@/components/admin/CreateTrainerModal';
@@ -55,6 +60,9 @@ export function UsersDirectory() {
   const [dialog, setDialog] = useState<Dialog>(null);
 
   const [reactivate] = useReactivateUserMutation();
+  const [startImpersonation] = useStartImpersonationMutation();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   // Debounce free-text search → resets keyset accumulation when it changes.
   useEffect(() => {
@@ -108,6 +116,32 @@ export function UsersDirectory() {
     }
   };
 
+  // FR-015 (H1): start impersonating a user. Server re-issues cookies for the target;
+  // the Session refetch swaps the principal so the hazard banner mounts. Drop into the
+  // target's portal at "/". BR-009: super-admins can't be impersonated.
+  const onImpersonate = async (user: UserResponse) => {
+    setBusy(user.id, true);
+    try {
+      await startImpersonation({ userId: user.id }).unwrap();
+      navigate('/');
+    } catch (e) {
+      const code = parseApiError(e).errorCode;
+      dispatch(
+        pushToast({
+          tone: 'foul',
+          message:
+            code === 'IMPERSONATE_SUPER_ADMIN'
+              ? 'You can’t impersonate another super admin.'
+              : code === 'ACCOUNT_INACTIVE'
+                ? 'You can’t impersonate a deactivated user.'
+                : 'Could not start impersonation. Please try again.',
+        }),
+      );
+    } finally {
+      setBusy(user.id, false);
+    }
+  };
+
   const columns: Column<UserResponse>[] = [
     {
       key: 'name',
@@ -151,6 +185,10 @@ export function UsersDirectory() {
     const items: { key: string; label: string; onSelect: () => void; danger?: boolean }[] = [
       { key: 'edit', label: 'Edit', onSelect: () => setDialog({ kind: 'edit', user: u }) },
     ];
+    // Impersonate: only active, non-super-admin accounts (BR-009).
+    if (u.status === 'ACTIVE' && u.role !== 'SUPER_ADMIN') {
+      items.push({ key: 'impersonate', label: 'Impersonate', onSelect: () => onImpersonate(u) });
+    }
     if (u.status === 'ACTIVE') {
       items.push({ key: 'deactivate', label: 'Deactivate', onSelect: () => setDialog({ kind: 'deactivate', user: u }) });
     } else {

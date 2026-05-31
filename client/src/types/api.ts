@@ -310,3 +310,27 @@ export interface Branding {
   primaryColorHex: string;
   updatedAt: string;
 }
+
+// ---- Impersonation (Module G) ----
+
+/** POST /impersonate/:userId and /impersonate/exit response. */
+export interface ImpersonationState {
+  impersonating: boolean;
+  targetUserId: string | null;
+  targetDisplayName: string | null;
+  /** ISO-8601 1h hard expiry (H1). */
+  expiresAt: string | null;
+}
+
+/** One row of GET /impersonation/history (FR-016). */
+export interface ImpersonationLog {
+  id: string;
+  adminId: string;
+  adminEmail: string;
+  targetUserId: string;
+  targetEmail: string;
+  startedAt: string;
+  endedAt: string | null;
+  /** Populated once the session ends (TASK-002 H1 sweep closes abandoned logs). */
+  durationSec: number | null;
+}

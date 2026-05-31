@@ -153,4 +153,42 @@ describe('UsersDirectory', () => {
     const row = await screen.findByRole('row', { name: /ian inactive/i });
     await waitFor(() => expect(within(row).getByText('ACTIVE')).toBeInTheDocument());
   });
+
+  it('starts impersonation from the row menu (FR-015)', async () => {
+    let posted = false;
+    const u1 = mkUser({ id: 'u1', firstName: 'Pat', lastName: 'Player', role: 'PLAYER', status: 'ACTIVE' });
+    server.use(
+      http.get(apiUrl('/users'), () => HttpResponse.json(page([u1]))),
+      http.post(apiUrl('/impersonate/u1'), () => {
+        posted = true;
+        return HttpResponse.json({
+          impersonating: true,
+          targetUserId: 'u1',
+          targetDisplayName: 'Pat Player',
+          expiresAt: '2026-05-31T01:00:00Z',
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<UsersDirectory />);
+
+    await screen.findByText('Pat Player');
+    await user.click(screen.getByRole('button', { name: /actions for pat player/i }));
+    await user.click(screen.getByRole('menuitem', { name: /^impersonate$/i }));
+
+    await waitFor(() => expect(posted).toBe(true));
+    // Flush the post-await busy reset inside act (the row clears its aria-busy).
+    await waitFor(() => expect(screen.getByRole('row', { name: /pat player/i })).not.toHaveAttribute('aria-busy'));
+  });
+
+  it('does not offer Impersonate for super admins (BR-009)', async () => {
+    const admin = mkUser({ id: 'a1', firstName: 'Sam', lastName: 'Super', role: 'SUPER_ADMIN', status: 'ACTIVE' });
+    server.use(http.get(apiUrl('/users'), () => HttpResponse.json(page([admin]))));
+    const user = userEvent.setup();
+    renderWithProviders(<UsersDirectory />);
+
+    await screen.findByText('Sam Super');
+    await user.click(screen.getByRole('button', { name: /actions for sam super/i }));
+    expect(screen.queryByRole('menuitem', { name: /^impersonate$/i })).not.toBeInTheDocument();
+  });
 });
