@@ -1,0 +1,39 @@
+.ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+}
+
+.ring svg {
+  position: absolute;
+  inset: 0;
+}
+
+.track {
+  stroke: var(--line);
+}
+
+.progress {
+  stroke: var(--pending);
+  transition: stroke-dashoffset 1s linear;
+}
+
+.foul .progress {
+  stroke: var(--foul);
+}
+
+.digits {
+  font-size: var(--fs-body-s);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.foul .digits {
+  color: var(--foul-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress {
+    transition: none;
+  }
+}

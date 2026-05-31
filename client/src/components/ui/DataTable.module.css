@@ -1,0 +1,95 @@
+.wrap {
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body);
+  font-variant-numeric: tabular-nums;
+}
+
+.th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.td {
+  padding: var(--sp-3);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.end {
+  text-align: right;
+}
+
+.row:hover .td {
+  background: var(--surface-sunken);
+}
+
+.busy {
+  opacity: 0.55;
+}
+
+.emptyCell {
+  padding: var(--sp-8);
+  text-align: center;
+  color: var(--ink-2);
+}
+
+.more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-4);
+}
+
+.count {
+  color: var(--ink-3);
+}
+
+/* Card-stack under 960px: each row becomes a labeled card. */
+@media (max-width: 959px) {
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .row {
+    margin-bottom: var(--sp-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+  }
+  .td {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    border-bottom: 1px solid var(--line);
+  }
+  .td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    font-size: var(--fs-label);
+    letter-spacing: var(--ls-label);
+  }
+}

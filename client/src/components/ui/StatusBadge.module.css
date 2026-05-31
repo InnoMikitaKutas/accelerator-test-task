@@ -1,0 +1,41 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-2);
+  border-radius: var(--r-pill);
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.neutral {
+  background: var(--surface-sunken);
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+.go {
+  background: var(--go-tint);
+  color: var(--go-ink);
+}
+.pending {
+  background: var(--pending-tint);
+  color: var(--pending-ink);
+}
+.foul {
+  background: var(--foul-tint);
+  color: var(--foul-ink);
+}
+.info {
+  background: var(--info-tint);
+  color: var(--info-ink);
+}
+
+.struck {
+  text-decoration: line-through;
+}
