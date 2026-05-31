@@ -252,6 +252,30 @@ export interface ApprovalResponse {
   parentNote: string | null;
 }
 
+// ---- Availability / Best Times (Module F) ----
+
+/**
+ * A recurring weekly time range (api-spec §Module F TimeSlotDto). `dayOfWeek` is
+ * 0=Sunday … 6=Saturday; `startTime`/`endTime` are 'HH:mm' 24h, local to the org/user TZ.
+ */
+export interface TimeSlot {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+}
+
+/**
+ * One row of the trainer Best-Times view (GET /trainer/availability) — a player the
+ * trainer is associated with, plus that player's weekly Best-Times slots. Best Times
+ * are shared-per-child (Zone-2, no trainerId) per the locked API flag. Soft-deleted
+ * players are excluded server-side (L4), so the client renders rows verbatim.
+ */
+export interface TrainerAvailabilityRow {
+  playerProfileId: string;
+  displayName: string;
+  slots: TimeSlot[];
+}
+
 // ---- Portal branding (Module H) ----
 
 export interface Branding {

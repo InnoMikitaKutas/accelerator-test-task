@@ -4,6 +4,7 @@ import { RootIndex } from '@/pages/RootIndex';
 import { UsersDirectory } from '@/pages/admin/UsersDirectory';
 import { ProfileSettings } from '@/pages/ProfileSettings';
 import { ShareLinksManager } from '@/pages/trainer/ShareLinksManager';
+import { TrainerAvailabilityView } from '@/components/availability/TrainerAvailabilityView';
 import { JoinLanding } from '@/pages/public/JoinLanding';
 import { FamilyRoster } from '@/pages/family/FamilyRoster';
 import { Approvals } from '@/pages/family/Approvals';
@@ -26,6 +27,9 @@ export const appRouter = createBrowserRouter(
     { path: '/account', element: <ProfileSettings /> },
     // Trainer ShareLinks manager (Phase 10.1 adds the role guard + shell layout).
     { path: '/sharelinks', element: <ShareLinksManager /> },
+    // Trainer Best-Times heatmap — read-only player availability (FR-034). Self-contained
+    // view component; Phase 10.1 adds the TRAINER role guard + shell layout.
+    { path: '/trainer/availability', element: <TrainerAvailabilityView /> },
     // Public, trainer-branded join landing — register or associate (M1, L7).
     { path: '/join/:code', element: <JoinLanding /> },
     // Family / parent-child (Zone-1, PLAYER) — roster + approvals. Phase 10.1 adds guards.
