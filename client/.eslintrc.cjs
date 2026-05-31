@@ -22,6 +22,8 @@ module.exports = {
       files: ['**/*.test.ts', '**/*.test.tsx', 'src/test/**'],
       rules: {
         '@typescript-eslint/no-non-null-assertion': 'off',
+        // Test utilities legitimately re-export and export helpers, not just components.
+        'react-refresh/only-export-components': 'off',
       },
     },
   ],

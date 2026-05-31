@@ -60,7 +60,8 @@ function isAuthExpiry(error: FetchBaseQueryError | undefined): boolean {
 }
 
 // Single-flight latch: concurrent 401s share one POST /auth/refresh.
-let refreshInFlight: ReturnType<typeof rawBaseQuery> | null = null;
+type RawResult = Awaited<ReturnType<typeof rawBaseQuery>>;
+let refreshInFlight: Promise<RawResult> | null = null;
 
 export const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
@@ -76,10 +77,9 @@ export const baseQueryWithReauth: BaseQueryFn<
 
   if (isAuthExpiry(result.error)) {
     if (!refreshInFlight) {
-      refreshInFlight = rawBaseQuery(
-        decorate({ url: '/auth/refresh', method: 'POST' }, false, null),
-        api,
-        extraOptions,
+      // Promise.resolve coerces the MaybePromise return type to a real Promise.
+      refreshInFlight = Promise.resolve(
+        rawBaseQuery(decorate({ url: '/auth/refresh', method: 'POST' }, false, null), api, extraOptions),
       );
       // Release the latch once it settles so a later expiry starts a fresh refresh.
       void refreshInFlight.finally(() => {
