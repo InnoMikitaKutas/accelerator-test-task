@@ -26,8 +26,34 @@ function installMemoryStorage(key: 'localStorage' | 'sessionStorage') {
 installMemoryStorage('localStorage');
 installMemoryStorage('sessionStorage');
 
-// MSW lifecycle. onUnhandledRequest:'error' makes a missing mock fail the test
-// loudly instead of leaking to the real network.
-beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+// --- Request AbortSignal strip ---
+// On Node 25, undici (via @mswjs/interceptors) rejects the AbortSignal that
+// fetchBaseQuery attaches to its Request — even a valid one. Tests don't exercise
+// request abortion, so wrap the (MSW-proxied) Request constructor to drop `signal`.
+// This is a test-harness shim only; the production fetch keeps its signal.
+let originalRequest: typeof Request;
+
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: 'error' });
+  originalRequest = globalThis.Request;
+  const stripped = new Proxy(originalRequest, {
+    construct(target, args) {
+      const [input, init] = args as [RequestInfo | URL, RequestInit | undefined];
+      if (init && typeof init === 'object' && 'signal' in init) {
+        const { signal: _signal, ...rest } = init;
+        return Reflect.construct(target, [input, rest]);
+      }
+      return Reflect.construct(target, args);
+    },
+  });
+  Object.defineProperty(globalThis, 'Request', { value: stripped, configurable: true, writable: true });
+});
 afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+afterAll(() => {
+  Object.defineProperty(globalThis, 'Request', {
+    value: originalRequest,
+    configurable: true,
+    writable: true,
+  });
+  server.close();
+});
