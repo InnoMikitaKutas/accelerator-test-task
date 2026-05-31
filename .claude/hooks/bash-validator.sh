@@ -38,7 +38,7 @@ BLOCKED_PATTERNS=(
 )
 
 for PATTERN in "${BLOCKED_PATTERNS[@]}"; do
-  if echo "$COMMAND" | grep -qi "$PATTERN"; then
+  if echo "$COMMAND" | grep -qi -e "$PATTERN"; then
     echo "🚫 BLOCKED: Destructive command detected: matches pattern '$PATTERN'"
     echo "   Command: $COMMAND"
     echo "   This operation is blocked. See AGENTS.md."
