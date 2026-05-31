@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAppSelector } from '@/app/hooks';
 import { Button } from '@/components/ui/Button';
 import { useLogoutMutation } from '@/features/auth/api';
@@ -49,6 +49,7 @@ export function RootIndex() {
         <p style={{ color: 'var(--ink-2)' }}>
           Your workspace arrives in the next phases. For now, authentication is wired end-to-end.
         </p>
+        {user.role === 'SUPER_ADMIN' ? <Link to="/admin/users">Manage users</Link> : null}
         <Button variant="secondary" loading={isLoading} onClick={() => logout()}>
           Log out
         </Button>
