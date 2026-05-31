@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { authRoutes } from '@/pages/auth/routes';
 import { RootIndex } from '@/pages/RootIndex';
 import { UsersDirectory } from '@/pages/admin/UsersDirectory';
@@ -10,38 +10,109 @@ import { BrandingSettings } from '@/pages/trainer/BrandingSettings';
 import { JoinLanding } from '@/pages/public/JoinLanding';
 import { FamilyRoster } from '@/pages/family/FamilyRoster';
 import { Approvals } from '@/pages/family/Approvals';
+import { AppShell } from '@/components/shell/AppShell';
+import { RequireAuth } from '@/components/auth/RequireAuth';
+import { RequireRole } from '@/components/auth/RequireRole';
 
 /**
- * Minimal app router for Phases 3–4 — the public auth routes, the Super-Admin users
- * directory, plus a "/" landing that routes by session status. Phase 10.1 expands
- * this into the full guarded data router (RequireAuth/RequireRole/RequireVerified +
- * every feature route); the role guard on /admin/* lands there.
+ * App data router (Task 10.1).
+ *
+ * Public routes (auth screens + the branded /join landing) render bare. Everything
+ * else lives under a single authenticated layout: RequireAuth (→ /login when signed
+ * out; → forced-change when mustChangePassword) wraps the role-aware AppShell, whose
+ * <Outlet/> renders the matched page. Per-page RequireRole bounces a wrong-role
+ * principal to "/". Email verification is surfaced by the global VerifyEmailBanner
+ * (the L7 soft path), not a hard route wall.
+ *
+ * Some rail-nav targets (dashboards, players/coaches, coach My-Times, player Best-Times)
+ * belong to later epics; until those pages exist they fall through "*" → "/".
  */
 export const appRouter = createBrowserRouter(
   [
-    { path: '/', element: <RootIndex /> },
-    ...authRoutes,
-    { path: '/admin/users', element: <UsersDirectory /> },
-    // Super-Admin impersonation audit log (FR-016). Phase 10.1 adds the role guard.
-    { path: '/admin/impersonation', element: <ImpersonationHistory /> },
-    // Profile & account settings — same role-shaped page under both nav labels
-    // (trainer/coach → "Profile", player → "Account"). Phase 10.1 wraps these in the
-    // shell layout + RequireAuth.
-    { path: '/profile', element: <ProfileSettings /> },
-    { path: '/account', element: <ProfileSettings /> },
-    // Trainer ShareLinks manager (Phase 10.1 adds the role guard + shell layout).
-    { path: '/sharelinks', element: <ShareLinksManager /> },
-    // Trainer Best-Times heatmap — read-only player availability (FR-034). Self-contained
-    // view component; Phase 10.1 adds the TRAINER role guard + shell layout.
-    { path: '/trainer/availability', element: <TrainerAvailabilityView /> },
-    // Trainer portal branding — live-preview color + logo (FR-037). Phase 10.1 guards.
-    { path: '/branding', element: <BrandingSettings /> },
-    // Public, trainer-branded join landing — register or associate (M1, L7).
+    // ---- Public ----
+    ...authRoutes, // /login, /verify-email, /forgot-password, /reset-password, /forced-password-change
     { path: '/join/:code', element: <JoinLanding /> },
-    // Family / parent-child (Zone-1, PLAYER) — roster + approvals. Phase 10.1 adds guards.
-    { path: '/family', element: <FamilyRoster /> },
-    { path: '/approvals', element: <Approvals /> },
-    // Unknown paths fall back to "/", which redirects to /login when signed out.
+
+    // ---- Authenticated (RequireAuth → AppShell) ----
+    {
+      element: (
+        <RequireAuth>
+          <AppShell>
+            <Outlet />
+          </AppShell>
+        </RequireAuth>
+      ),
+      children: [
+        { path: '/', element: <RootIndex /> },
+        // Profile & account settings — same role-shaped page under both nav labels.
+        { path: '/profile', element: <ProfileSettings /> },
+        { path: '/account', element: <ProfileSettings /> },
+
+        // Trainer
+        {
+          path: '/sharelinks',
+          element: (
+            <RequireRole roles={['TRAINER']}>
+              <ShareLinksManager />
+            </RequireRole>
+          ),
+        },
+        {
+          path: '/trainer/availability',
+          element: (
+            <RequireRole roles={['TRAINER']}>
+              <TrainerAvailabilityView />
+            </RequireRole>
+          ),
+        },
+        {
+          path: '/branding',
+          element: (
+            <RequireRole roles={['TRAINER']}>
+              <BrandingSettings />
+            </RequireRole>
+          ),
+        },
+
+        // Super Admin
+        {
+          path: '/admin/users',
+          element: (
+            <RequireRole roles={['SUPER_ADMIN']}>
+              <UsersDirectory />
+            </RequireRole>
+          ),
+        },
+        {
+          path: '/admin/impersonation',
+          element: (
+            <RequireRole roles={['SUPER_ADMIN']}>
+              <ImpersonationHistory />
+            </RequireRole>
+          ),
+        },
+
+        // Player / family (Zone-1, account-global)
+        {
+          path: '/family',
+          element: (
+            <RequireRole roles={['PLAYER']}>
+              <FamilyRoster />
+            </RequireRole>
+          ),
+        },
+        {
+          path: '/approvals',
+          element: (
+            <RequireRole roles={['PLAYER']}>
+              <Approvals />
+            </RequireRole>
+          ),
+        },
+      ],
+    },
+
+    // Unknown paths → "/", which routes by session + role.
     { path: '*', element: <Navigate to="/" replace /> },
   ],
   { future: { v7_relativeSplatPath: true } },

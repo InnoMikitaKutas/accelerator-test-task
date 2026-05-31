@@ -58,10 +58,10 @@ export function AppShell({ children, alerts = [] }: AppShellProps) {
         <RailNav role={user.role} />
         {isPlayer ? (
           <ThemeProvider className={styles.mainScope}>
-            <main className={styles.main}>{children}</main>
+            <div className={styles.main}>{children}</div>
           </ThemeProvider>
         ) : (
-          <main className={styles.main}>{children}</main>
+          <div className={styles.main}>{children}</div>
         )}
       </div>
     </div>
