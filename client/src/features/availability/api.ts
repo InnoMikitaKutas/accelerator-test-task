@@ -1,5 +1,11 @@
 import { api } from '@/services/api';
-import type { Paginated, TrainerAvailabilityRow } from '@/types/api';
+import type {
+  AvailabilityResponse,
+  Paginated,
+  SubjectType,
+  TimeSlot,
+  TrainerAvailabilityRow,
+} from '@/types/api';
 
 /**
  * Module F — Availability / Best Times (api-designer-spec §Module F).
@@ -25,6 +31,10 @@ export type TrainerAvailabilityArg = {
   search?: string;
 };
 
+/** Per-subject Availability cache tag (Best Times are shared-per-child → keyed by subject). */
+const subjectTag = (subjectType: SubjectType, subjectId: string) =>
+  ({ type: 'Availability' as const, id: `${subjectType}:${subjectId}` });
+
 export const availabilityApi = api.injectEndpoints({
   endpoints: (build) => ({
     trainerAvailability: build.query<Paginated<TrainerAvailabilityRow>, TrainerAvailabilityArg>({
@@ -36,7 +46,30 @@ export const availabilityApi = api.injectEndpoints({
       }),
       providesTags: ['Availability'],
     }),
+
+    // Owner read of a subject's Best Times / My Times (FR-030/039).
+    getAvailability: build.query<AvailabilityResponse, { subjectType: SubjectType; subjectId: string }>({
+      query: ({ subjectType, subjectId }) => `/availability/${subjectType}/${subjectId}`,
+      providesTags: (_r, _e, a) => [subjectTag(a.subjectType, a.subjectId)],
+    }),
+
+    // Full-set replacement (PUT semantics). Server validates start<end + rejects overlaps.
+    replaceAvailability: build.mutation<
+      AvailabilityResponse,
+      { subjectType: SubjectType; subjectId: string; slots: TimeSlot[] }
+    >({
+      query: ({ subjectType, subjectId, slots }) => ({
+        url: `/availability/${subjectType}/${subjectId}`,
+        method: 'PUT',
+        body: { slots },
+      }),
+      invalidatesTags: (_r, _e, a) => [subjectTag(a.subjectType, a.subjectId)],
+    }),
   }),
 });
 
-export const { useTrainerAvailabilityQuery } = availabilityApi;
+export const {
+  useTrainerAvailabilityQuery,
+  useGetAvailabilityQuery,
+  useReplaceAvailabilityMutation,
+} = availabilityApi;

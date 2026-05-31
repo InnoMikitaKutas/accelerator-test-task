@@ -226,3 +226,199 @@
   justify-content: center;
   padding: var(--sp-2);
 }
+
+/* ===== WeeklyAvailabilityGrid + list-mode (Task 8.2) ===== */
+.gridPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  max-width: var(--content-max);
+}
+
+.gridActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* Grid/List segmented toggle. */
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.viewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3);
+  border: none;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+}
+.viewBtn[aria-pressed='true'] {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+.viewBtn + .viewBtn {
+  border-left: 1px solid var(--line-strong);
+}
+
+/* Conflict (server-rejected overlaps) + soft overlap warning. */
+.conflict {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--foul);
+  background: var(--foul-tint);
+  color: var(--foul-ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-body-s);
+}
+.warnNote {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--pending);
+  background: var(--pending-tint);
+  color: var(--pending-ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-body-s);
+}
+
+/* The training-board grid. Each row is its own CSS grid with a shared column
+   template, so columns line up without display:contents. <760px → horizontal scroll. */
+.gridWrap {
+  overflow-x: auto;
+}
+.grid {
+  display: flex;
+  flex-direction: column;
+  min-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.gridRow {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(44px, 1fr));
+}
+.gridRow + .gridRow {
+  border-top: 1px solid var(--line);
+}
+.timeHead,
+.gridHeadDay {
+  padding: var(--sp-2);
+  text-align: center;
+  background: var(--surface-sunken);
+}
+.timeHead {
+  text-align: left;
+}
+.timeCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--line);
+  color: var(--ink-3);
+}
+.gridCell {
+  min-height: 34px;
+  padding: 0;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+.gridCell:last-child {
+  border-right: none;
+}
+.gridCell:hover {
+  background: var(--go-tint);
+}
+.gridCell:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+/* Painted slot — go-tint fill + a left lane-edge, echoing the chalk grid. */
+.painted {
+  background: var(--go-tint);
+  box-shadow: inset 3px 0 0 var(--go);
+}
+.painted:hover {
+  background: rgba(30, 142, 85, 0.24);
+}
+
+/* List-mode (the SR-primary path). */
+.listMode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.slotList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.slotItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+.slotFlagged {
+  border-color: var(--foul);
+  background: var(--foul-tint);
+}
+.slotDay {
+  min-width: 84px;
+  font-weight: 600;
+}
+.slotWarn {
+  color: var(--foul-ink);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+.slotRemove {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  border-radius: var(--r-sm);
+}
+.slotRemove:hover {
+  color: var(--foul-ink);
+  border-color: var(--line);
+  background: var(--surface-sunken);
+}
+.addRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+}
+.addRow select,
+.addRow input {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+}

@@ -276,6 +276,32 @@ export interface TrainerAvailabilityRow {
   slots: TimeSlot[];
 }
 
+export type SubjectType = 'player' | 'coach';
+
+/** Owner read/replace shape for `GET`/`PUT /availability/:subjectType/:subjectId`. */
+export interface AvailabilityResponse {
+  subjectType: SubjectType;
+  subjectId: string;
+  slots: TimeSlot[];
+  updatedAt: string;
+}
+
+/** Coach-conflict override (FR-031). `eventId` linkage is owned by Epic-02. */
+export interface OverrideRequest {
+  eventId: string;
+  coachId: string;
+  reason: string;
+}
+
+export interface OverrideResult {
+  id: string;
+  eventId: string;
+  coachId: string;
+  overriddenBy: string;
+  reason: string;
+  createdAt: string;
+}
+
 // ---- Portal branding (Module H) ----
 
 export interface Branding {
