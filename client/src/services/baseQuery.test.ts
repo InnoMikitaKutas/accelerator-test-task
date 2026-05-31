@@ -4,14 +4,7 @@ import { server } from '@/test/server';
 import { apiUrl } from '@/test/handlers';
 import type { ContextRef } from '@/types/api';
 import { baseQueryWithReauth } from './baseQuery';
-
-function clearCookies() {
-  for (const c of document.cookie.split(';')) {
-    const eq = c.indexOf('=');
-    const name = (eq > -1 ? c.slice(0, eq) : c).trim();
-    if (name) document.cookie = `${name}=;max-age=0;path=/`;
-  }
-}
+import { clearCsrfToken } from './csrf';
 
 function makeApi(opts: { context?: ContextRef | null; type?: 'query' | 'mutation' } = {}) {
   const dispatch = vi.fn();
@@ -31,14 +24,16 @@ function makeApi(opts: { context?: ContextRef | null; type?: 'query' | 'mutation
 }
 
 describe('baseQueryWithReauth', () => {
-  beforeEach(clearCookies);
-  afterEach(clearCookies);
+  // baseQuery primes the CSRF token from GET /auth/csrf (default handler) and caches
+  // it in module scope; reset between tests for isolation.
+  beforeEach(clearCsrfToken);
+  afterEach(clearCsrfToken);
 
-  it('sends X-CSRF-Token on mutating methods but not on GET', async () => {
-    document.cookie = 'csrf=tok-123';
+  it('sends X-CSRF-Token (fetched from /auth/csrf) on mutating methods but not on GET', async () => {
     let getCsrf: string | null = 'unset';
     let postCsrf: string | null = null;
     server.use(
+      http.get(apiUrl('/auth/csrf'), () => HttpResponse.json({ csrfToken: 'tok-123' })),
       http.get(apiUrl('/thing'), ({ request }) => {
         getCsrf = request.headers.get('x-csrf-token');
         return HttpResponse.json({ ok: true });
@@ -54,6 +49,55 @@ describe('baseQueryWithReauth', () => {
 
     expect(getCsrf).toBeNull();
     expect(postCsrf).toBe('tok-123');
+  });
+
+  it('re-primes the CSRF token and retries once on 403 CSRF_INVALID', async () => {
+    let csrfFetches = 0;
+    let postCalls = 0;
+    const sentTokens: (string | null)[] = [];
+    server.use(
+      http.get(apiUrl('/auth/csrf'), () => {
+        csrfFetches += 1;
+        return HttpResponse.json({ csrfToken: `tok-${csrfFetches}` });
+      }),
+      http.post(apiUrl('/thing'), ({ request }) => {
+        postCalls += 1;
+        sentTokens.push(request.headers.get('x-csrf-token'));
+        return postCalls === 1
+          ? HttpResponse.json({ errorCode: 'CSRF_INVALID' }, { status: 403 })
+          : HttpResponse.json({ ok: true });
+      }),
+    );
+
+    const result = await baseQueryWithReauth(
+      { url: '/thing', method: 'POST' },
+      makeApi({ type: 'mutation' }).api,
+      {},
+    );
+
+    expect(postCalls).toBe(2);
+    expect(csrfFetches).toBe(2); // initial prime + re-prime after the 403
+    expect(sentTokens).toEqual(['tok-1', 'tok-2']); // retried with the fresh token
+    expect(result.data).toEqual({ ok: true });
+  });
+
+  it('does not retry a 403 that is not CSRF_INVALID', async () => {
+    let postCalls = 0;
+    server.use(
+      http.post(apiUrl('/thing'), () => {
+        postCalls += 1;
+        return HttpResponse.json({ errorCode: 'FORBIDDEN' }, { status: 403 });
+      }),
+    );
+
+    const result = await baseQueryWithReauth(
+      { url: '/thing', method: 'POST' },
+      makeApi({ type: 'mutation' }).api,
+      {},
+    );
+
+    expect(postCalls).toBe(1);
+    expect(result.error?.status).toBe(403);
   });
 
   it('sends X-Active-Context only on scoped endpoints', async () => {

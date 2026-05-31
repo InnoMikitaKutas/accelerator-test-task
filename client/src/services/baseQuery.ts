@@ -6,15 +6,17 @@ import type {
   FetchBaseQueryMeta,
 } from '@reduxjs/toolkit/query';
 import type { ContextRef } from '@/types/api';
-import { getCsrfToken } from './csrf';
+import { ensureCsrfToken, getCsrfToken, clearCsrfToken } from './csrf';
 
 /**
  * The single most important non-visual module in the app.
  *
  * Wraps fetchBaseQuery with: credentials:'include' (cookie auth, M5) · X-CSRF-Token
- * on mutating methods (F-4) · X-Active-Context on subject-scoped endpoints (F-5) ·
- * single-flight 401→refresh→retry, falling back to session/cleared when the refresh
- * itself fails (H1 expiry, H2 revoked family).
+ * on mutating methods — the token is fetched from GET /auth/csrf and cached before
+ * the request, since the `csrf` cookie is HttpOnly and unreadable (F-4) ·
+ * X-Active-Context on subject-scoped endpoints (F-5) · single-flight 401→refresh→retry,
+ * falling back to session/cleared when the refresh itself fails (H1 expiry, H2 revoked
+ * family) · a one-shot 403 CSRF_INVALID → re-prime token → retry for a stale token.
  */
 
 const rawBaseQuery = fetchBaseQuery({
@@ -53,10 +55,26 @@ function decorate(args: string | FetchArgs, scoped: boolean, context: ContextRef
   return out;
 }
 
+/** The (uppercased) HTTP method for either arg form; defaults to GET. */
+function methodOf(args: string | FetchArgs): string {
+  return typeof args === 'string' ? 'GET' : (args.method ?? 'GET').toUpperCase();
+}
+
+/** Mutating requests (non-safe methods) must carry an X-CSRF-Token. */
+function isMutating(args: string | FetchArgs): boolean {
+  return !SAFE_METHODS.has(methodOf(args));
+}
+
 /** Only a genuine access-token expiry (UNAUTHENTICATED) is recoverable by refresh. */
 function isAuthExpiry(error: FetchBaseQueryError | undefined): boolean {
   if (!error || error.status !== 401) return false;
   return (error.data as { errorCode?: string } | undefined)?.errorCode === 'UNAUTHENTICATED';
+}
+
+/** A stale/rotated CSRF token (403 CSRF_INVALID) → re-prime once and retry. */
+function isCsrfInvalid(error: FetchBaseQueryError | undefined): boolean {
+  if (!error || error.status !== 403) return false;
+  return (error.data as { errorCode?: string } | undefined)?.errorCode === 'CSRF_INVALID';
 }
 
 // Single-flight latch: concurrent 401s share one POST /auth/refresh.
@@ -72,14 +90,22 @@ export const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   const scoped = Boolean(extraOptions?.scoped);
   const context = (api.getState() as ReadableState).activeContext?.current ?? null;
+  const mutating = isMutating(args);
+
+  // Mutations echo X-CSRF-Token; the token comes from GET /auth/csrf (the HttpOnly
+  // `csrf` cookie can't be read), fetched + cached once before the request (F-4).
+  if (mutating) await ensureCsrfToken();
 
   let result = await rawBaseQuery(decorate(args, scoped, context), api, extraOptions);
 
   if (isAuthExpiry(result.error)) {
     if (!refreshInFlight) {
+      // POST /auth/refresh is itself a mutation, so prime the CSRF token first; then
       // Promise.resolve coerces the MaybePromise return type to a real Promise.
       refreshInFlight = Promise.resolve(
-        rawBaseQuery(decorate({ url: '/auth/refresh', method: 'POST' }, false, null), api, extraOptions),
+        ensureCsrfToken().then(() =>
+          rawBaseQuery(decorate({ url: '/auth/refresh', method: 'POST' }, false, null), api, extraOptions),
+        ),
       );
       // Release the latch once it settles so a later expiry starts a fresh refresh.
       void refreshInFlight.finally(() => {
@@ -96,7 +122,15 @@ export const baseQueryWithReauth: BaseQueryFn<
       return result; // surface the original 401, never loop
     }
 
-    // Re-decorate to pick up a possibly-rotated csrf cookie, then retry exactly once.
+    // Retry exactly once with the (still-valid, sid-bound) CSRF token.
+    result = await rawBaseQuery(decorate(args, scoped, context), api, extraOptions);
+  }
+
+  // A mutation rejected for a stale/rotated CSRF token: drop the cache, re-prime
+  // from GET /auth/csrf, and retry exactly once (never loops).
+  if (mutating && isCsrfInvalid(result.error)) {
+    clearCsrfToken();
+    await ensureCsrfToken();
     result = await rawBaseQuery(decorate(args, scoped, context), api, extraOptions);
   }
 

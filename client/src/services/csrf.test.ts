@@ -1,40 +1,79 @@
-import { getCsrfToken } from './csrf';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/test/server';
+import { apiUrl, CSRF_TOKEN } from '@/test/handlers';
+import { ensureCsrfToken, getCsrfToken, clearCsrfToken } from './csrf';
 
-function clearCookies() {
-  for (const c of document.cookie.split(';')) {
-    const eq = c.indexOf('=');
-    const name = (eq > -1 ? c.slice(0, eq) : c).trim();
-    if (name) document.cookie = `${name}=;max-age=0;path=/`;
-  }
-}
+// The token is cached in module scope; reset it between tests for isolation.
+beforeEach(clearCsrfToken);
+afterEach(clearCsrfToken);
 
-describe('getCsrfToken', () => {
-  beforeEach(clearCookies);
-  afterEach(clearCookies);
-
-  it('returns undefined when no csrf cookie is present', () => {
+describe('CSRF token', () => {
+  it('getCsrfToken is undefined until a token has been fetched', () => {
     expect(getCsrfToken()).toBeUndefined();
   });
 
-  it('reads the csrf cookie value', () => {
-    document.cookie = 'csrf=abc123';
-    expect(getCsrfToken()).toBe('abc123');
+  it('ensureCsrfToken fetches GET /auth/csrf and caches the token', async () => {
+    const token = await ensureCsrfToken();
+    expect(token).toBe(CSRF_TOKEN);
+    expect(getCsrfToken()).toBe(CSRF_TOKEN);
   });
 
-  it('URL-decodes the value', () => {
-    document.cookie = 'csrf=a%2Bb%3Dc'; // encodes "a+b=c"
-    expect(getCsrfToken()).toBe('a+b=c');
+  it('reads the token from the response body, not the cookie', async () => {
+    server.use(
+      http.get(apiUrl('/auth/csrf'), () => HttpResponse.json({ csrfToken: 'from-body-xyz' })),
+    );
+    expect(await ensureCsrfToken()).toBe('from-body-xyz');
   });
 
-  it('picks csrf out of several cookies regardless of position', () => {
-    document.cookie = 'foo=1';
-    document.cookie = 'csrf=tok';
-    document.cookie = 'bar=2';
-    expect(getCsrfToken()).toBe('tok');
+  it('coalesces concurrent calls into a single fetch (single-flight)', async () => {
+    let calls = 0;
+    server.use(
+      http.get(apiUrl('/auth/csrf'), () => {
+        calls += 1;
+        return HttpResponse.json({ csrfToken: 'tok' });
+      }),
+    );
+
+    const [a, b, c] = await Promise.all([ensureCsrfToken(), ensureCsrfToken(), ensureCsrfToken()]);
+
+    expect(calls).toBe(1);
+    expect([a, b, c]).toEqual(['tok', 'tok', 'tok']);
   });
 
-  it('does not match a cookie whose name merely ends with csrf', () => {
-    document.cookie = 'xcsrf=nope';
+  it('does not refetch once cached', async () => {
+    let calls = 0;
+    server.use(
+      http.get(apiUrl('/auth/csrf'), () => {
+        calls += 1;
+        return HttpResponse.json({ csrfToken: 'tok' });
+      }),
+    );
+
+    await ensureCsrfToken();
+    await ensureCsrfToken();
+
+    expect(calls).toBe(1);
+  });
+
+  it('clearCsrfToken forces a refetch on the next ensure', async () => {
+    let calls = 0;
+    server.use(
+      http.get(apiUrl('/auth/csrf'), () => {
+        calls += 1;
+        return HttpResponse.json({ csrfToken: `tok-${calls}` });
+      }),
+    );
+
+    expect(await ensureCsrfToken()).toBe('tok-1');
+    clearCsrfToken();
+    expect(getCsrfToken()).toBeUndefined();
+    expect(await ensureCsrfToken()).toBe('tok-2');
+    expect(calls).toBe(2);
+  });
+
+  it('resolves to undefined (no throw) when the endpoint fails', async () => {
+    server.use(http.get(apiUrl('/auth/csrf'), () => new HttpResponse(null, { status: 500 })));
+    expect(await ensureCsrfToken()).toBeUndefined();
     expect(getCsrfToken()).toBeUndefined();
   });
 });
