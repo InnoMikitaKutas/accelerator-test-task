@@ -3,11 +3,12 @@ import { SharelinksModule } from '@modules/sharelinks/sharelinks.module';
 import { FamilyController } from './family.controller';
 import { FamilyService } from './family.service';
 import { PurchaseApprovalService } from './purchase-approval.service';
+import { ApprovalExpirySweep } from './approval-expiry.sweep';
 import { FamilyRepository } from './family.repository';
 
 @Module({
   imports: [SharelinksModule], // reuses AssociationService
   controllers: [FamilyController],
-  providers: [FamilyService, PurchaseApprovalService, FamilyRepository],
+  providers: [FamilyService, PurchaseApprovalService, ApprovalExpirySweep, FamilyRepository],
 })
 export class FamilyModule {}

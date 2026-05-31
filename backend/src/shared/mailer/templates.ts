@@ -8,6 +8,7 @@ export type MailTemplateId =
   | 'trainer.invite'
   | 'coach.invite'
   | 'child.approval-request'
+  | 'child.approval-expired'
   | 'sharelink.blocked-parent'
   | 'registration.confirm';
 
@@ -40,6 +41,11 @@ export const TEMPLATES: Record<MailTemplateId, Template> = {
     subject: 'Approval needed',
     render: (v) =>
       `${v.childName} requested a purchase (${v.item}). Review within 48h: ${v.link}`,
+  },
+  'child.approval-expired': {
+    subject: 'A purchase request expired',
+    render: (v) =>
+      `A purchase request (${v.item}) expired without a decision and was auto-denied. View your requests: ${v.link}`,
   },
   'sharelink.blocked-parent': {
     subject: 'Action needed for your child',

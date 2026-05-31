@@ -189,6 +189,28 @@ export class FamilyRepository {
   }
 
   // ── approvals (RLS: dual-axis trainer/parent) ──
+  /**
+   * BR-008/FR-024 — transition every PENDING approval past its 48h window to EXPIRED. Runs on the
+   * SYSTEM (BYPASSRLS) pool because the sweep has no tenant session (mirrors findShareLinkByCode /
+   * trainerExists). Returns the transitioned rows so the caller can notify each parent.
+   */
+  expirePending(): Promise<{ id: string; parentUserId: string; itemRef: string }[]> {
+    return this.system
+      .update(childPurchaseApprovals)
+      .set({ status: 'EXPIRED', respondedAt: new Date() })
+      .where(
+        and(
+          eq(childPurchaseApprovals.status, 'PENDING'),
+          lt(childPurchaseApprovals.expiresAt, new Date()),
+        ),
+      )
+      .returning({
+        id: childPurchaseApprovals.id,
+        parentUserId: childPurchaseApprovals.parentUserId,
+        itemRef: childPurchaseApprovals.itemRef,
+      });
+  }
+
   createApproval(trainerId: string, values: typeof childPurchaseApprovals.$inferInsert): Promise<ApprovalRow> {
     return this.tenancy.runScoped(async (tx) => {
       const [row] = await tx.insert(childPurchaseApprovals).values(values).returning();
