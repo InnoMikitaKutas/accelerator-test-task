@@ -4,6 +4,9 @@ const config: Config = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',
   testRegex: '.*\\.spec\\.ts$',
+  // class-validator/class-transformer (e.g. env.validation) need Reflect.getMetadata; the app
+  // loads this at bootstrap, so unit tests must too.
+  setupFiles: ['reflect-metadata'],
   transform: {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
