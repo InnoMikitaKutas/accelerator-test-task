@@ -1,0 +1,162 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-6);
+  max-width: 840px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+}
+.headTitles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.sectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.sectionTitle {
+  font-size: var(--fs-h3);
+}
+.sectionSub {
+  flex-basis: 100%;
+  color: var(--ink-3);
+  font-size: var(--fs-body-s);
+}
+
+/* Static player-link card. */
+.linkCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.codeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.code {
+  font-size: var(--fs-h1);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+}
+.linkBody {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.shareUrl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.url {
+  color: var(--ink-2);
+  word-break: break-all;
+}
+.linkStats {
+  display: flex;
+  gap: var(--sp-5);
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+}
+.statValue {
+  color: var(--brand-text);
+}
+.linkActions {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+/* Coach invites list. */
+.inviteList {
+  display: flex;
+  flex-direction: column;
+}
+.inviteRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.inviteRow:last-child {
+  border-bottom: none;
+}
+.inviteRow[data-muted] {
+  opacity: 0.6;
+}
+.inviteMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 0;
+}
+.inviteEmail {
+  font-weight: 600;
+  word-break: break-all;
+}
+.inviteMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.expiry {
+  font-size: var(--fs-body-s);
+  color: var(--ink-3);
+}
+
+.loadMore {
+  display: flex;
+  justify-content: center;
+}
+
+/* Invite modal form. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.modalHint {
+  font-size: var(--fs-body-s);
+  color: var(--ink-3);
+}
+
+@media (max-width: 560px) {
+  .linkActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
