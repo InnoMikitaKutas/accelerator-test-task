@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { cx } from '@/lib/cx';
 import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { setContext } from '@/features/context/activeContextSlice';
+import { ThemeProvider } from '@/theme/ThemeProvider';
+import { ChannelBar } from '@/components/channel/ChannelBar';
 import { RailNav } from './RailNav';
 import { TopBar } from './TopBar';
 import type { NotificationAlert } from './NotificationsBell';
@@ -33,6 +35,8 @@ export function AppShell({ children, alerts = [] }: AppShellProps) {
     if (alert.href) navigate(alert.href);
   };
 
+  const isPlayer = user.role === 'PLAYER';
+
   return (
     <div className={cx(styles.shell, railOpen && styles.railOpen)}>
       <TopBar
@@ -41,9 +45,21 @@ export function AppShell({ children, alerts = [] }: AppShellProps) {
         onSelectAlert={onSelectAlert}
         onToggleRail={() => setRailOpen((o) => !o)}
       />
+      {/* Zone-3 + Channel Bar adopt the active trainer's brand; Zone-1 stays neutral. */}
+      {isPlayer ? (
+        <ThemeProvider>
+          <ChannelBar />
+        </ThemeProvider>
+      ) : null}
       <div className={styles.body}>
         <RailNav role={user.role} />
-        <main className={styles.main}>{children}</main>
+        {isPlayer ? (
+          <ThemeProvider className={styles.mainScope}>
+            <main className={styles.main}>{children}</main>
+          </ThemeProvider>
+        ) : (
+          <main className={styles.main}>{children}</main>
+        )}
       </div>
     </div>
   );

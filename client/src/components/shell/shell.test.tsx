@@ -1,6 +1,9 @@
+import { http, HttpResponse } from 'msw';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@/test/utils';
+import { server } from '@/test/server';
+import { apiUrl } from '@/test/handlers';
 import { makeStore } from '@/app/store';
 import { setSession } from '@/features/session/sessionSlice';
 import type { SessionUser } from '@/types/api';
@@ -61,6 +64,34 @@ describe('AppShell', () => {
     const user = userEvent.setup();
     const store = makeStore();
     store.dispatch(setSession(player));
+
+    // AppShell renders the ChannelBar for PLAYER, which resolves /me/contexts.
+    // Single subject+trainer (matching the alert) → bar hidden, no interference.
+    server.use(
+      http.get(apiUrl('/me/contexts'), () =>
+        HttpResponse.json({
+          subjects: [
+            {
+              profileId: 'sub-liam',
+              displayName: 'Liam',
+              isSelf: false,
+              isChild: true,
+              trainers: [{ trainerId: 'tr-jones', name: 'Coach Jones', status: 'active' }],
+            },
+          ],
+          defaultContext: { subjectProfileId: 'sub-liam', trainerId: 'tr-jones' },
+        }),
+      ),
+      // ThemeProvider resolves the active trainer's branding for Zone-3.
+      http.get(apiUrl('/branding/tr-jones'), () =>
+        HttpResponse.json({
+          trainerId: 'tr-jones',
+          logoUrl: null,
+          primaryColorHex: '#1A73E8',
+          updatedAt: '2026-01-01T00:00:00Z',
+        }),
+      ),
+    );
 
     renderWithProviders(
       <AppShell alerts={[alert]}>
