@@ -22,7 +22,7 @@ export const approvalStatusEnum = pgEnum('approval_status', [
   'EXPIRED',
 ]);
 export const subjectTypeEnum = pgEnum('subject_type', ['player', 'coach']);
-export const outboxStatusEnum = pgEnum('outbox_status', ['PENDING', 'SENT', 'FAILED']);
+export const outboxStatusEnum = pgEnum('outbox_status', ['PENDING', 'SENT', 'FAILED', 'DEAD']);
 
 // Convenience union types derived from the DB enums (used across guards, DTOs, claims).
 export type Role = (typeof roleEnum.enumValues)[number];

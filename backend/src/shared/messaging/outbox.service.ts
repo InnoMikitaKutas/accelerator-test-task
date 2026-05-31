@@ -9,8 +9,12 @@ export class OutboxService {
     tx: DrizzleDB,
     type: string,
     payload: Record<string, unknown>,
-    availableAt: Date = new Date(),
+    opts: { availableAt?: Date; dedupeKey?: string } = {},
   ): Promise<void> {
-    await tx.insert(outboxMessages).values({ type, payload, availableAt });
+    await tx
+      .insert(outboxMessages)
+      .values({ type, payload, availableAt: opts.availableAt ?? new Date(), dedupeKey: opts.dedupeKey })
+      // Idempotent on dedupeKey (NFR-008): a duplicate enqueue with the same key is a no-op.
+      .onConflictDoNothing();
   }
 }
