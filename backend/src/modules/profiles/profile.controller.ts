@@ -19,6 +19,7 @@ import {
 import { CurrentUser } from '@shared/common/decorators';
 import { ErrorResponseDto } from '@shared/common/errors/error-response.dto';
 import { avatarFilePipe, UploadedFile as UploadedFileType } from '@shared/storage/file-validation';
+import { UPLOAD_LIMITS } from '@shared/storage/upload.constants';
 import { SessionPrincipal } from '@shared/context/request-context';
 import { ProfileService } from './profile.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -52,7 +53,7 @@ export class ProfileController {
   @Post('photo')
   @ApiSecurity('csrf')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: UPLOAD_LIMITS }))
   @ApiOperation({ summary: 'Upload avatar (PNG/JPG ≤2MB) + thumbnail — FR-038' })
   @ApiResponse({ status: 201, type: PhotoUploadResultDto })
   @ApiResponse({ status: 413, type: ErrorResponseDto, description: 'FILE_TOO_LARGE' })

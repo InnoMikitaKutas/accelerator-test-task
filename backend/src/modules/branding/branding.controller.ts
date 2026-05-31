@@ -21,6 +21,7 @@ import {
 import { RequireContext, Roles } from '@shared/common/decorators';
 import { ErrorResponseDto } from '@shared/common/errors/error-response.dto';
 import { logoFilePipe, UploadedFile as UploadedFileType } from '@shared/storage/file-validation';
+import { UPLOAD_LIMITS } from '@shared/storage/upload.constants';
 import { BrandingService } from './branding.service';
 import { BrandingResponseDto, UpdateBrandingDto } from './dto/branding.dto';
 
@@ -58,7 +59,7 @@ export class BrandingController {
   @ApiSecurity('csrf')
   @ApiSecurity('active-context')
   @ApiConsumes('multipart/form-data')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: UPLOAD_LIMITS }))
   @ApiOperation({ summary: 'Upload logo (PNG/JPG/SVG ≤2MB, auto-resized) — FR-037' })
   @ApiResponse({ status: 200, type: BrandingResponseDto })
   @ApiResponse({ status: 413, type: ErrorResponseDto, description: 'FILE_TOO_LARGE' })

@@ -38,6 +38,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
       });
     }
 
+    // Multer size rejection (FR-037/§13). multer throws a MulterError(LIMIT_FILE_SIZE);
+    // @nestjs/platform-express maps it to PayloadTooLargeException (413). Either way, surface the
+    // stable FILE_TOO_LARGE envelope clients expect rather than a generic HTTP_ERROR.
+    const isFileTooLarge =
+      (exception as { code?: string })?.code === 'LIMIT_FILE_SIZE' ||
+      (exception instanceof HttpException && exception.getStatus() === HttpStatus.PAYLOAD_TOO_LARGE);
+    if (isFileTooLarge) {
+      const appErr = new AppException(AppErrorCode.FILE_TOO_LARGE);
+      const body = appErr.getResponse() as Record<string, unknown>;
+      return res.status(appErr.getStatus()).json({ error: HttpStatus[appErr.getStatus()], ...body });
+    }
+
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const r = exception.getResponse();

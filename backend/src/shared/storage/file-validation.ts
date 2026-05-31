@@ -2,6 +2,7 @@ import { Injectable, PipeTransform } from '@nestjs/common';
 import { AppException } from '@shared/common/errors/app.exception';
 import { AppErrorCode } from '@shared/common/errors/error-codes';
 import { sniffImageType } from './magic-bytes';
+import { MAX_UPLOAD_BYTES } from './upload.constants';
 
 /** Minimal shape of a multer-uploaded file (avoids a hard @types/multer dependency). */
 export interface UploadedFile {
@@ -11,7 +12,7 @@ export interface UploadedFile {
   buffer: Buffer;
 }
 
-const MAX_BYTES = 2 * 1024 * 1024; // 2 MB (api-spec)
+const MAX_BYTES = MAX_UPLOAD_BYTES; // single source of truth (also enforced at the multer layer)
 
 @Injectable()
 export class ImageValidationPipe implements PipeTransform<UploadedFile | undefined, UploadedFile> {
