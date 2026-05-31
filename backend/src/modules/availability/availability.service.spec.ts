@@ -38,6 +38,14 @@ describe('AvailabilityService authorization', () => {
     expect(replaceSlots).toHaveBeenCalled();
   });
 
+  it('getFor → NOT_FOUND for a soft-deleted player (repo filters deletedAt)', async () => {
+    // The repo now returns undefined for a soft-deleted player (L4); the service maps that to 404.
+    const svc = make({ getPlayerProfile: jest.fn().mockResolvedValue(undefined) });
+    await expect(svc.getFor(principal(), 'player', 'pp')).rejects.toMatchObject({
+      errorCode: AppErrorCode.NOT_FOUND,
+    });
+  });
+
   it('non-owner write → TENANT_FORBIDDEN', async () => {
     const svc = make({
       getPlayerProfile: jest.fn().mockResolvedValue({ id: 'pp', userId: 'someone-else', parentUserId: null }),

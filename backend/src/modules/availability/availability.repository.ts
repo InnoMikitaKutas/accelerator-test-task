@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { DRIZZLE } from '@shared/database/drizzle.constants';
 import { DrizzleDB } from '@shared/database/drizzle.provider';
 import {
@@ -60,7 +60,13 @@ export class AvailabilityRepository {
   }
 
   getPlayerProfile(id: string) {
-    return this.db.select().from(playerProfiles).where(eq(playerProfiles.id, id)).limit(1).then((r) => r[0]);
+    // L4: a soft-deleted player is not readable/writable (consistent with the family module).
+    return this.db
+      .select()
+      .from(playerProfiles)
+      .where(and(eq(playerProfiles.id, id), isNull(playerProfiles.deletedAt)))
+      .limit(1)
+      .then((r) => r[0]);
   }
 
   /** Active (trainer, player) link — scoped read so RLS permits it for the trainer. */
@@ -92,7 +98,13 @@ export class AvailabilityRepository {
         })
         .from(trainerPlayerAssociations)
         .innerJoin(playerProfiles, eq(playerProfiles.id, trainerPlayerAssociations.playerProfileId))
-        .where(and(eq(trainerPlayerAssociations.trainerId, trainerId), eq(trainerPlayerAssociations.status, 'active')));
+        .where(
+          and(
+            eq(trainerPlayerAssociations.trainerId, trainerId),
+            eq(trainerPlayerAssociations.status, 'active'),
+            isNull(playerProfiles.deletedAt), // L4: exclude soft-deleted players from the trainer view
+          ),
+        );
     }, trainerId);
   }
 
