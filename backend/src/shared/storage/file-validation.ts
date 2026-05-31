@@ -1,6 +1,7 @@
 import { Injectable, PipeTransform } from '@nestjs/common';
 import { AppException } from '@shared/common/errors/app.exception';
 import { AppErrorCode } from '@shared/common/errors/error-codes';
+import { sniffImageType } from './magic-bytes';
 
 /** Minimal shape of a multer-uploaded file (avoids a hard @types/multer dependency). */
 export interface UploadedFile {
@@ -24,6 +25,12 @@ export class ImageValidationPipe implements PipeTransform<UploadedFile | undefin
     }
     if (file.size > MAX_BYTES) throw new AppException(AppErrorCode.FILE_TOO_LARGE);
     if (!this.allowed.includes(file.mimetype)) {
+      throw new AppException(AppErrorCode.UNSUPPORTED_FILE_TYPE);
+    }
+    // §13: trust the bytes, not the client-declared MIME. The sniffed type must be allowed AND
+    // match the declared type, so a script blob masquerading as image/png is rejected.
+    const sniffed = sniffImageType(file.buffer);
+    if (!sniffed || !this.allowed.includes(sniffed) || sniffed !== file.mimetype) {
       throw new AppException(AppErrorCode.UNSUPPORTED_FILE_TYPE);
     }
     return file;

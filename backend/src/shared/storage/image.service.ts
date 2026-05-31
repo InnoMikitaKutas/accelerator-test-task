@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import sharp from 'sharp';
+import { sanitizeSvg } from './svg-sanitizer';
 
 export interface ProcessedImage {
   buffer: Buffer;
@@ -27,9 +28,12 @@ export class ImageService {
     };
   }
 
-  /** Logo (FR-037): ~200×200. SVG passes through unchanged; raster is normalized to PNG. */
+  /** Logo (FR-037): ~200×200. SVG is sanitized (stored-XSS defense); raster is normalized to PNG. */
   async processLogo(input: Buffer, mime: string): Promise<ProcessedImage> {
-    if (mime === 'image/svg+xml') return { buffer: input, contentType: mime, ext: 'svg' };
+    if (mime === 'image/svg+xml') {
+      const clean = sanitizeSvg(input.toString('utf8'));
+      return { buffer: Buffer.from(clean, 'utf8'), contentType: mime, ext: 'svg' };
+    }
     const out = await sharp(input)
       .resize(200, 200, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
       .png()

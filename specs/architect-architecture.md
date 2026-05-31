@@ -147,6 +147,14 @@ Full attribute list in requirements doc §Entities. Relationship/constraint choi
 - RLS backstop + leakage tests for tenant isolation (NFR-011).
 - Secrets only via env/config; never committed (AGENTS.md).
 
+**Uploaded-asset serving contract (FR-037/§13).** User-uploaded assets (logos, photos) MUST be
+served from a **cookieless origin** (prod: S3 + CDN) with `Content-Disposition: attachment` and
+`X-Content-Type-Options: nosniff` so a malicious upload cannot execute in the app's origin. SVG is
+additionally **sanitized at upload** with DOMPurify (`image.service.processLogo`), and every upload
+is type-checked by **magic bytes** rather than the client-declared MIME (`storage/magic-bytes.ts`).
+Epic-01 only *stores* assets (no `/static` route yet); the `LocalStorageAdapter` persists a
+`.meta.json` content-type sidecar so the future static server / S3 adapter can honor this contract.
+
 ### Scalability (NFR-001..005)
 
 - Stateless app nodes; Redis holds all shared state → horizontal scaling for 1k concurrent.

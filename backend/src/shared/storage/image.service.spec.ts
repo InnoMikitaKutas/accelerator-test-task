@@ -1,3 +1,9 @@
+/**
+ * @jest-environment jsdom
+ *
+ * processLogo() now sanitizes SVG via DOMPurify, which needs a DOM `window`; the jsdom test
+ * environment supplies one so the sanitizer never has to require jsdom under ts-jest.
+ */
 import sharp from 'sharp';
 import { ImageService } from './image.service';
 
@@ -29,10 +35,14 @@ describe('ImageService', () => {
     expect(out.contentType).toBe('image/png');
   });
 
-  it('passes SVG through untouched', async () => {
-    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>');
-    const out = await svc.processLogo(svg, 'image/svg+xml');
+  it('processLogo sanitizes an SVG payload', async () => {
+    const malicious = '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><circle r="4"/></svg>';
+    const out = await svc.processLogo(Buffer.from(malicious), 'image/svg+xml');
     expect(out.contentType).toBe('image/svg+xml');
-    expect(out.buffer).toBe(svg);
+    expect(out.ext).toBe('svg');
+    const text = out.buffer.toString('utf8');
+    expect(text).not.toMatch(/<script/i);
+    expect(text).not.toMatch(/alert/);
+    expect(text).toMatch(/<circle/i); // benign content preserved
   });
 });
