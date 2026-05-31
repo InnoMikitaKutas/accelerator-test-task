@@ -27,25 +27,25 @@ bugs/gaps, several security-relevant; none are systemic.
 
 | ID | Sev | Area | Finding | Status |
 |----|-----|------|---------|--------|
-| C1 | 🔴 Critical | branding/storage | Stored XSS via unsanitized SVG logo served same-origin | [ ] open |
-| H1 | 🟠 High | impersonation | 1h window dead (JWT exp=15min); logs only closed on explicit exit | [ ] open |
-| H2 | 🟠 High | users | Deactivation doesn't revoke active sessions | [ ] open |
-| M1 | 🟡 Medium | sharelinks | `/join` existing-user branch ignores link type + single-use | [ ] open |
-| M2 | 🟡 Medium | availability | Trainer can override a coach from any org (no association check) | [ ] open |
-| M3 | 🟡 Medium | family | No real 48h approval auto-deny (lazy read-time only) | [ ] open |
-| M4 | 🟡 Medium | storage | No multer `fileSize` limit; 2MB checked after full buffering | [ ] open |
-| M5 | 🟡 Medium | bootstrap | CORS registered after CSRF; `origin ?? true` + credentials | [ ] open |
-| M6 | 🟡 Medium | messaging | Outbox sends under row-lock; no retry cap/backoff/DLQ/idempotency | [ ] open |
-| M7 | 🟡 Medium | config | Secrets/env validated shallowly (no min-length, COOKIE_SECURE unchecked) | [ ] open |
-| L1 | ⚪ Low | db | Missing keyset indexes on `share_links`, `child_purchase_approvals` | [ ] open |
-| L2 | ⚪ Low | db | No DB CHECK for child age 1–18 (DTO-only) | [ ] open |
-| L3 | ⚪ Low | auth | Login confirms credential validity for inactive/unverified accounts | [ ] open |
-| L4 | ⚪ Low | availability | Player lookups ignore `deletedAt` (soft-deleted players readable) | [ ] open |
-| L5 | ⚪ Low | availability | Override `reason` lacks `@IsString()`/trim (whitespace passes) | [ ] open |
-| L6 | ⚪ Low | common | Cursor `createdAt` value unvalidated → silently wrong page | [ ] open |
-| L7 | ⚪ Low | sharelinks | `/join` auto-login while unverified vs login blocking unverified | [ ] open |
-| L8 | ⚪ Low | storage | `storage.put(contentType)` dropped by local adapter | [ ] open |
-| L9 | ⚪ Low | docs | Stale comments (minor-login "deferred"; sharelink collision-retry) | [ ] open |
+| C1 | 🔴 Critical | branding/storage | Stored XSS via unsanitized SVG logo served same-origin | [x] fixed (TASK-002) |
+| H1 | 🟠 High | impersonation | 1h window dead (JWT exp=15min); logs only closed on explicit exit | [x] fixed (TASK-002) |
+| H2 | 🟠 High | users | Deactivation doesn't revoke active sessions | [x] fixed (TASK-002) |
+| M1 | 🟡 Medium | sharelinks | `/join` existing-user branch ignores link type + single-use | [x] fixed (TASK-002) |
+| M2 | 🟡 Medium | availability | Trainer can override a coach from any org (no association check) | [x] fixed (TASK-002) |
+| M3 | 🟡 Medium | family | No real 48h approval auto-deny (lazy read-time only) | [x] fixed (TASK-002) |
+| M4 | 🟡 Medium | storage | No multer `fileSize` limit; 2MB checked after full buffering | [x] fixed (TASK-002) |
+| M5 | 🟡 Medium | bootstrap | CORS registered after CSRF; `origin ?? true` + credentials | [x] fixed (TASK-002) |
+| M6 | 🟡 Medium | messaging | Outbox sends under row-lock; no retry cap/backoff/DLQ/idempotency | [x] fixed (TASK-002) |
+| M7 | 🟡 Medium | config | Secrets/env validated shallowly (no min-length, COOKIE_SECURE unchecked) | [x] fixed (TASK-002) |
+| L1 | ⚪ Low | db | Missing keyset indexes on `share_links`, `child_purchase_approvals` | [x] fixed (TASK-002) |
+| L2 | ⚪ Low | db | No DB CHECK for child age 1–18 (DTO-only) | [x] fixed (TASK-002) |
+| L3 | ⚪ Low | auth | Login confirms credential validity for inactive/unverified accounts | [x] documented as intended (TASK-002) |
+| L4 | ⚪ Low | availability | Player lookups ignore `deletedAt` (soft-deleted players readable) | [x] fixed (TASK-002) |
+| L5 | ⚪ Low | availability | Override `reason` lacks `@IsString()`/trim (whitespace passes) | [x] fixed (TASK-002) |
+| L6 | ⚪ Low | common | Cursor `createdAt` value unvalidated → silently wrong page | [x] fixed (TASK-002) |
+| L7 | ⚪ Low | sharelinks | `/join` auto-login while unverified vs login blocking unverified | [x] documented as intended (TASK-002) |
+| L8 | ⚪ Low | storage | `storage.put(contentType)` dropped by local adapter | [x] fixed (TASK-002) |
+| L9 | ⚪ Low | docs | Stale comments (minor-login "deferred"; sharelink collision-retry) | [x] fixed (TASK-002) |
 
 ---
 
