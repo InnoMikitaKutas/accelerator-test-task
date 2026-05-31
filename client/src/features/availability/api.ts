@@ -1,6 +1,8 @@
 import { api } from '@/services/api';
 import type {
   AvailabilityResponse,
+  OverrideRequest,
+  OverrideResult,
   Paginated,
   SubjectType,
   TimeSlot,
@@ -65,6 +67,12 @@ export const availabilityApi = api.injectEndpoints({
       }),
       invalidatesTags: (_r, _e, a) => [subjectTag(a.subjectType, a.subjectId)],
     }),
+
+    // Override a coach availability conflict (FR-031). Availability is advisory
+    // (BR-012); the server logs the reason to the audit trail.
+    createOverride: build.mutation<OverrideResult, OverrideRequest>({
+      query: (body) => ({ url: '/availability/overrides', method: 'POST', body }),
+    }),
   }),
 });
 
@@ -72,4 +80,5 @@ export const {
   useTrainerAvailabilityQuery,
   useGetAvailabilityQuery,
   useReplaceAvailabilityMutation,
+  useCreateOverrideMutation,
 } = availabilityApi;

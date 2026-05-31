@@ -422,3 +422,35 @@
   border-radius: var(--r-sm);
   font-size: var(--fs-body);
 }
+
+/* ===== ConflictOverrideModal (Task 8.4) ===== */
+.overrideWarn {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-left: 2px solid var(--pending);
+  background: var(--pending-tint);
+  color: var(--pending-ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-body-s);
+}
+.overrideWarn svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.reasonInput {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+  resize: vertical;
+}
+.reasonInput:focus-visible {
+  outline: none;
+  border-color: var(--brand-line);
+  box-shadow: inset 0 -2px 0 var(--brand-line);
+}
