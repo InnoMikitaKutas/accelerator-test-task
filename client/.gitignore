@@ -1,0 +1,32 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+
+node_modules
+dist
+dist-ssr
+coverage
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Env files (never commit secrets — AGENTS.md)
+.env
+.env.*
+!.env.example
+
+# MSW
+public/mockServiceWorker.js
+
+# TS build info
+*.tsbuildinfo
