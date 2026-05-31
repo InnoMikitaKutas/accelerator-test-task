@@ -77,6 +77,33 @@ export interface ContextsResponse {
   defaultContext: ContextRef | null;
 }
 
+// ---- Users / Super Admin (Module B) ----
+
+export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
+
+export interface UserResponse {
+  id: string;
+  /** "deleted-user-<uuid>@anon.invalid" after a GDPR delete. */
+  email: string;
+  /** "Deleted" after a GDPR delete. */
+  firstName: string;
+  /** "User" after a GDPR delete. */
+  lastName: string;
+  role: Role;
+  status: UserStatus;
+  emailVerified: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  /** Trainer org(s) this user belongs to / is associated with. */
+  trainerIds?: string[];
+}
+
+export interface GdprDeleteResult {
+  anonymized: boolean;
+  deletionLogId: string;
+  historyRetained: true;
+}
+
 // ---- Portal branding (Module H) ----
 
 export interface Branding {
