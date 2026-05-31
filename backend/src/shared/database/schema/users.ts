@@ -20,8 +20,8 @@ export const users = pgTable(
     status: userStatusEnum('status').notNull().default('ACTIVE'),
     emailVerified: boolean('email_verified').notNull().default(false),
     mustChangePassword: boolean('must_change_password').notNull().default(false),
-    // Minor login (P-5): a constrained child User. Provisioning flow is gated on a product
-    // decision (architect review R3) — column exists, creation path deferred.
+    // Minor login (P-5): a constrained child User. Provisioning is implemented by
+    // FamilyRepository.enableChildLogin (FR-026); creation is gated behind the parent flow.
     isMinor: boolean('is_minor').notNull().default(false),
     managedByParentUserId: uuid('managed_by_parent_user_id').references(
       (): AnyPgColumn => users.id,

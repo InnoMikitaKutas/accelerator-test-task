@@ -38,6 +38,9 @@ export class AuthService {
     const ok = await this.passwords.verify(user.passwordHash, dto.password);
     if (!ok) throw new AppException(AppErrorCode.INVALID_CREDENTIALS);
 
+    // D-1 (accepted trade-off): credentials are verified before the status/verified branches, so
+    // ACCOUNT_INACTIVE / EMAIL_NOT_VERIFIED imply valid credentials. Intentional for UX (clear
+    // remediation messaging); see specs "Accepted trade-offs". Throttling (5/min) bounds probing.
     if (user.status !== 'ACTIVE') throw new AppException(AppErrorCode.ACCOUNT_INACTIVE);
     if (!user.emailVerified) {
       throw new AppException(AppErrorCode.EMAIL_NOT_VERIFIED, { extra: { canResend: true } });

@@ -147,6 +147,9 @@ export class JoinService {
       return created;
     });
 
+    // R4 (accepted trade-off): a brand-new /join registrant is auto-logged-in while still
+    // unverified (verified-allowlist UX). If they log out, login blocks until they verify.
+    // Documented in specs "Accepted trade-offs".
     const tokens = await this.tokens.issueSession(this.auth.claimsFrom(user));
     return { user: this.auth.buildSessionUser(user), tokens };
   }

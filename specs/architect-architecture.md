@@ -318,3 +318,15 @@ The whole child path assumes a child can authenticate: `MinorAccountGuard` reads
 ### What's unblocked now
 
 Phases **0–3** (scaffold → schema → shared infra → Auth) can proceed immediately, with two cheap forward-edits folded in early: add the `app.current_user_id` CLS GUC (R2) when building `JwtAuthGuard`/`TenancyService`, and stand up the `BYPASSRLS` system DB role (R1) when building the Drizzle providers — both are far cheaper to include now than to retrofit. R3/R4/P-4 block only their specific later phases and need a product answer first.
+
+---
+
+### Accepted trade-offs (Epic-01 code review — TASK-002)
+
+- **L3 — Login error specificity for inactive/unverified accounts:** the password is verified
+  *before* the active/verified checks, so an `ACCOUNT_INACTIVE` / `EMAIL_NOT_VERIFIED` response
+  confirms the credentials were valid. Accepted for clear remediation UX; mitigated by the 5/min
+  `/auth/*` throttle that bounds credential probing. (`auth.service.login`.)
+- **L7 — `/join` auto-login while unverified:** a brand-new `/join` registrant receives a session
+  immediately (verified-allowlist UX) but, once logged out, must verify their email before logging
+  in again. Accepted; revisit if the verified-allowlist is tightened. (`join.service.registerNew`.)
