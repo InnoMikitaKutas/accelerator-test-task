@@ -14,6 +14,8 @@ export interface CountdownRingProps {
   size?: number;
   /** Accessible prefix, e.g. "Auto-exit in". */
   label?: string;
+  /** 'ring' (default) draws the SVG ring; 'text' shows just the mono digits. */
+  variant?: 'ring' | 'text';
 }
 
 function format(ms: number): string {
@@ -33,6 +35,7 @@ export function CountdownRing({
   onComplete,
   size = 56,
   label,
+  variant = 'ring',
 }: CountdownRingProps) {
   const target = useMemo(() => new Date(expiresAt).getTime(), [expiresAt]);
   const [now, setNow] = useState(() => Date.now());
@@ -60,13 +63,24 @@ export function CountdownRing({
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - fraction);
+  const sharedProps = {
+    role: 'timer' as const,
+    'aria-label': `${label ? `${label} ` : ''}${text}`,
+    'data-tone': foul ? ('foul' as const) : ('pending' as const),
+  };
+
+  if (variant === 'text') {
+    return (
+      <span className={cx(styles.textOnly, foul && styles.foul)} {...sharedProps}>
+        <span className={cx(styles.digits, 'u-mono')}>{text}</span>
+      </span>
+    );
+  }
 
   return (
     <span
       className={cx(styles.ring, foul && styles.foul)}
-      role="timer"
-      aria-label={`${label ? `${label} ` : ''}${text}`}
-      data-tone={foul ? 'foul' : 'pending'}
+      {...sharedProps}
       style={{ width: size, height: size }}
     >
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">

@@ -4,6 +4,11 @@
   place-items: center;
 }
 
+.textOnly {
+  display: inline-flex;
+  align-items: center;
+}
+
 .ring svg {
   position: absolute;
   inset: 0;

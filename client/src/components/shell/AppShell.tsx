@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/app/hooks';
 import { setContext } from '@/features/context/activeContextSlice';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { ChannelBar } from '@/components/channel/ChannelBar';
+import { ImpersonationBanner } from './ImpersonationBanner';
 import { RailNav } from './RailNav';
 import { TopBar } from './TopBar';
 import type { NotificationAlert } from './NotificationsBell';
@@ -39,6 +40,8 @@ export function AppShell({ children, alerts = [] }: AppShellProps) {
 
   return (
     <div className={cx(styles.shell, railOpen && styles.railOpen)}>
+      {/* Above everything; the Exit button becomes the first focusable element. */}
+      <ImpersonationBanner />
       <TopBar
         user={user}
         alerts={alerts}
