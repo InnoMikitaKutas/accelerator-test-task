@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, desc, eq, gte, isNull, lt, lte, or, SQL } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, lt, lte, or, sql, SQL } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { SYSTEM_DRIZZLE } from '@shared/database/drizzle.constants';
 import { DrizzleDB } from '@shared/database/drizzle.provider';
@@ -44,6 +44,20 @@ export class ImpersonationRepository {
       .set({ endedAt, durationSec })
       .where(eq(impersonationLogs.id, open.id));
     return open;
+  }
+
+  /** Close every still-open log older than `ttlSec` (expired/abandoned). Returns rows closed. */
+  async closeExpiredOpenLogs(ttlSec: number): Promise<number> {
+    const cutoff = new Date(Date.now() - ttlSec * 1000);
+    const result = await this.db
+      .update(impersonationLogs)
+      .set({
+        endedAt: sql`now()`,
+        durationSec: sql`extract(epoch from (now() - ${impersonationLogs.startedAt}))::int`,
+      })
+      .where(and(isNull(impersonationLogs.endedAt), lt(impersonationLogs.startedAt, cutoff)))
+      .returning({ id: impersonationLogs.id });
+    return result.length;
   }
 
   async history(q: ImpersonationHistoryQueryDto) {

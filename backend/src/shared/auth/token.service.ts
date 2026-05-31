@@ -55,10 +55,10 @@ export class TokenService {
     return { accessToken, refreshToken, family };
   }
 
-  signAccess(claims: AccessClaims): Promise<string> {
+  signAccess(claims: AccessClaims, expiresInSec?: number): Promise<string> {
     return this.jwt.signAsync(claims, {
       secret: this.config.getOrThrow('JWT_ACCESS_SECRET'),
-      expiresIn: Number(this.config.get('ACCESS_TOKEN_TTL', 900)),
+      expiresIn: expiresInSec ?? Number(this.config.get('ACCESS_TOKEN_TTL', 900)),
     });
   }
 
@@ -132,11 +132,16 @@ export class TokenService {
   /** Impersonation token for the target user, carrying impersonatorAdminId + a 1h hard cap. */
   issueImpersonation(target: Omit<AccessClaims, 'family'>, adminId: string): Promise<string> {
     const ttl = Number(this.config.get('IMPERSONATION_TTL', 3600));
-    return this.signAccess({
-      ...target,
-      family: `imp:${adminId}`,
-      impersonatorAdminId: adminId,
-      impersonationExp: Math.floor(Date.now() / 1000) + ttl,
-    });
+    // Sign with the impersonation TTL so the JWT `exp` matches the cookie maxAge and the
+    // impersonationExp claim — otherwise the token dies at the 15min access TTL (H1).
+    return this.signAccess(
+      {
+        ...target,
+        family: `imp:${adminId}`,
+        impersonatorAdminId: adminId,
+        impersonationExp: Math.floor(Date.now() / 1000) + ttl,
+      },
+      ttl,
+    );
   }
 }

@@ -113,4 +113,11 @@ describe('TokenService', () => {
     expect(claims.impersonatorAdminId).toBe('admin-9');
     expect(claims.impersonationExp).toBeGreaterThan(Math.floor(Date.now() / 1000));
   });
+
+  it('issueImpersonation signs with IMPERSONATION_TTL, not the 15min access TTL', async () => {
+    const svc = makeService(new FakeRedis());
+    const token = await svc.issueImpersonation(baseClaims, 'admin-1');
+    const decoded = new JwtService({}).decode(token) as { exp: number; iat: number };
+    expect(decoded.exp - decoded.iat).toBe(3600); // would be 900 (ACCESS_TOKEN_TTL) before the fix
+  });
 });
