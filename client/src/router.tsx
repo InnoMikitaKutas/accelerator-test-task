@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { authRoutes } from '@/pages/auth/routes';
 import { RootIndex } from '@/pages/RootIndex';
 import { UsersDirectory } from '@/pages/admin/UsersDirectory';
+import { ImpersonationHistory } from '@/pages/admin/ImpersonationHistory';
 import { ProfileSettings } from '@/pages/ProfileSettings';
 import { ShareLinksManager } from '@/pages/trainer/ShareLinksManager';
 import { TrainerAvailabilityView } from '@/components/availability/TrainerAvailabilityView';
@@ -20,6 +21,8 @@ export const appRouter = createBrowserRouter(
     { path: '/', element: <RootIndex /> },
     ...authRoutes,
     { path: '/admin/users', element: <UsersDirectory /> },
+    // Super-Admin impersonation audit log (FR-016). Phase 10.1 adds the role guard.
+    { path: '/admin/impersonation', element: <ImpersonationHistory /> },
     // Profile & account settings — same role-shaped page under both nav labels
     // (trainer/coach → "Profile", player → "Account"). Phase 10.1 wraps these in the
     // shell layout + RequireAuth.
