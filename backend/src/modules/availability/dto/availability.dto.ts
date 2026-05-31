@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -71,9 +71,14 @@ export class OverrideDto {
   @IsUUID()
   eventId: string;
 
-  @ApiProperty() @IsUUID() coachId: string;
+  @ApiProperty({ description: 'Coach PROFILE id (matches trainer_coach_associations.coach_profile_id)' })
+  @IsUUID()
+  coachId: string;
 
   @ApiProperty({ description: 'Required reason — logged to AvailabilityOverride (FR-031)' })
+  @IsString()
+  // Trim BEFORE @IsNotEmpty so a whitespace-only reason is rejected (L5).
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsNotEmpty()
   @MaxLength(500)
   reason: string;

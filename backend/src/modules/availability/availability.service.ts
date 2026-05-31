@@ -86,8 +86,9 @@ export class AvailabilityService {
   /** FR-031/035 — log a coach availability override with a required reason. */
   async createOverride(principal: SessionPrincipal, dto: OverrideDto) {
     const trainerId = this.tenancy.currentTrainerId();
-    if (!(await this.repo.trainerExistsForCoach(dto.coachId))) {
-      throw new AppException(AppErrorCode.NOT_FOUND);
+    // M2/NFR-011: only override a coach actively associated with THIS trainer — not any org's coach.
+    if (!(await this.repo.activeCoachAssociationExists(trainerId, dto.coachId))) {
+      throw new AppException(AppErrorCode.TENANT_FORBIDDEN);
     }
     const row = await this.repo.createOverride({
       eventId: dto.eventId,

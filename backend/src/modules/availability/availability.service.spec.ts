@@ -87,3 +87,40 @@ describe('AvailabilityService authorization', () => {
     ).rejects.toMatchObject({ errorCode: AppErrorCode.TENANT_FORBIDDEN });
   });
 });
+
+describe('AvailabilityService.createOverride', () => {
+  it('rejects a coach not actively associated with the trainer', async () => {
+    const svc = make({ activeCoachAssociationExists: jest.fn().mockResolvedValue(false) });
+    await expect(
+      svc.createOverride(principal({ id: 'tr', role: 'TRAINER' }), {
+        eventId: 'e',
+        coachId: 'c',
+        reason: 'sick',
+      }),
+    ).rejects.toMatchObject({ errorCode: AppErrorCode.TENANT_FORBIDDEN });
+  });
+
+  it('writes the override when an active association exists', async () => {
+    const createOverride = jest.fn().mockResolvedValue({
+      id: 'o',
+      eventId: 'e',
+      coachId: 'c',
+      overriddenBy: 'tr',
+      reason: 'sick',
+      createdAt: new Date('2026-05-31T10:00:00Z'),
+    });
+    const svc = make({
+      activeCoachAssociationExists: jest.fn().mockResolvedValue(true),
+      createOverride,
+    });
+    const out = await svc.createOverride(principal({ id: 'tr', role: 'TRAINER' }), {
+      eventId: 'e',
+      coachId: 'c',
+      reason: 'sick',
+    });
+    expect(out.id).toBe('o');
+    expect(createOverride).toHaveBeenCalledWith(
+      expect.objectContaining({ trainerId: 't-1', coachId: 'c', overriddenBy: 'tr', reason: 'sick' }),
+    );
+  });
+});

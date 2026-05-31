@@ -7,6 +7,7 @@ import {
   availabilityOverrides,
   coachProfiles,
   playerProfiles,
+  trainerCoachAssociations,
   trainerPlayerAssociations,
   trainerProfiles,
 } from '@shared/database/schema';
@@ -110,14 +111,22 @@ export class AvailabilityRepository {
     });
   }
 
-  trainerExistsForCoach(coachId: string): Promise<boolean> {
-    // (placeholder for Epic-02 event linkage validation; coach must exist)
-    return this.db
-      .select({ id: coachProfiles.id })
-      .from(coachProfiles)
-      .where(eq(coachProfiles.id, coachId))
-      .limit(1)
-      .then((r) => r.length > 0);
+  /** Active (trainer, coach) association — scoped so RLS allows the trainer to read it (FR-031/035). */
+  activeCoachAssociationExists(trainerId: string, coachProfileId: string): Promise<boolean> {
+    return this.tenancy.runScoped(async (tx) => {
+      const [row] = await tx
+        .select({ id: trainerCoachAssociations.id })
+        .from(trainerCoachAssociations)
+        .where(
+          and(
+            eq(trainerCoachAssociations.trainerId, trainerId),
+            eq(trainerCoachAssociations.coachProfileId, coachProfileId),
+            eq(trainerCoachAssociations.status, 'active'),
+          ),
+        )
+        .limit(1);
+      return !!row;
+    }, trainerId);
   }
 
   trainerProfileById(id: string): Promise<boolean> {
