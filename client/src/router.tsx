@@ -5,6 +5,8 @@ import { UsersDirectory } from '@/pages/admin/UsersDirectory';
 import { ProfileSettings } from '@/pages/ProfileSettings';
 import { ShareLinksManager } from '@/pages/trainer/ShareLinksManager';
 import { JoinLanding } from '@/pages/public/JoinLanding';
+import { FamilyRoster } from '@/pages/family/FamilyRoster';
+import { Approvals } from '@/pages/family/Approvals';
 
 /**
  * Minimal app router for Phases 3–4 — the public auth routes, the Super-Admin users
@@ -26,6 +28,9 @@ export const appRouter = createBrowserRouter(
     { path: '/sharelinks', element: <ShareLinksManager /> },
     // Public, trainer-branded join landing — register or associate (M1, L7).
     { path: '/join/:code', element: <JoinLanding /> },
+    // Family / parent-child (Zone-1, PLAYER) — roster + approvals. Phase 10.1 adds guards.
+    { path: '/family', element: <FamilyRoster /> },
+    { path: '/approvals', element: <Approvals /> },
     // Unknown paths fall back to "/", which redirects to /login when signed out.
     { path: '*', element: <Navigate to="/" replace /> },
   ],
