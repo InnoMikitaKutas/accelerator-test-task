@@ -49,7 +49,10 @@ export function nextRequestCursor<T>(acc: PageAccumulator<T>): string | null {
 }
 
 interface QueryLike<T> {
+  /** Persists across arg changes — may be a PRIOR cursor's page mid-fetch. */
   data?: T;
+  /** The result for the CURRENT arg only (undefined while a new cursor is fetching). */
+  currentData?: T;
   isFetching?: boolean;
   isLoading?: boolean;
 }
@@ -84,11 +87,15 @@ export function usePaginated<T, A extends Record<string, unknown>>(
   }, [argKey]);
 
   const result = useListQuery({ ...baseArg, cursor: requestCursor });
-  const page = result.data;
+  // Prefer `currentData` (this cursor's page). `data` persists the previous arg's
+  // result across a cursor change — merging it under the new cursor would mark that
+  // cursor "seen" and silently drop the real next page. Only merge settled results.
+  const page = result.currentData ?? result.data;
+  const settled = !(result.isFetching ?? false);
 
   useEffect(() => {
-    if (page) setAcc((prev) => mergePage(prev, requestCursor, page));
-  }, [page, requestCursor]);
+    if (page && settled) setAcc((prev) => mergePage(prev, requestCursor, page));
+  }, [page, settled, requestCursor]);
 
   const loadMore = useCallback(() => {
     const c = nextRequestCursor(acc);
