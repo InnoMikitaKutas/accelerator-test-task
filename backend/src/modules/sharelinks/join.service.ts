@@ -166,6 +166,16 @@ export class JoinService {
     return this.db.transaction(async (tx) => {
       const link = await this.lockValidLink(tx, code);
 
+      // M1/FR-029/BR-011: coach invites ('unique', single-use) are redeemed only by registerNew
+      // creating a brand-new account. An already-logged-in user cannot self-convert to a coach in
+      // Epic-01 — reject rather than silently create a player association (wrong role) and leave
+      // the single-use link unconsumed (leak).
+      if (link.type === 'unique') {
+        throw new AppException(AppErrorCode.VALIDATION_ERROR, {
+          details: [{ field: 'code', message: 'This invite must be redeemed by creating an account.' }],
+        });
+      }
+
       let subjectProfileId = dto.subjectProfileId;
       if (!subjectProfileId) {
         const [self] = await tx
