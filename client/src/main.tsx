@@ -1,3 +1,8 @@
+import '@fontsource-variable/archivo/standard.css'; // weight + width axes
+import '@fontsource-variable/spline-sans-mono';
+import './styles/tokens.css';
+import './styles/global.css';
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
