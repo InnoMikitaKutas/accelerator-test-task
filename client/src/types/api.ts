@@ -104,6 +104,100 @@ export interface GdprDeleteResult {
   historyRetained: true;
 }
 
+// ---- Profiles (Module C) ----
+
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER' | 'UNSPECIFIED';
+
+/** Role-specific block of a profile, discriminated by `kind` (mirrors the backend). */
+export interface TrainerDetails {
+  kind: 'trainer';
+  businessName: string;
+  businessAddress: string | null;
+}
+export interface CoachDetails {
+  kind: 'coach';
+  bio: string | null;
+  credentials: string[];
+  certifications: string[];
+  /** Public-profile visibility toggle (FR-032). */
+  publicVisible: boolean;
+}
+export interface PlayerDetails {
+  kind: 'player';
+  profileId: string;
+  gender: Gender;
+  school: string | null;
+  /** Read-only — managed by the trainer (FR-038). */
+  skillLevel: string | null;
+  emergencyContact: { name: string | null; phone: string | null };
+}
+export type ProfileDetails = TrainerDetails | CoachDetails | PlayerDetails;
+
+/** GET/PATCH /me/profile. `email`, `role`, and `details.skillLevel` are read-only (FR-038). */
+export interface ProfileResponse {
+  id: string;
+  role: Role;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  /** Foreign asset origin — render via assetUrl() + <img> (C1). */
+  photoUrl: string | null;
+  thumbnailUrl: string | null;
+  details: ProfileDetails;
+}
+
+/** POST /me/profile/photo response (thumbnail generated async, URL ready on return). */
+export interface PhotoUploadResult {
+  photoUrl: string;
+  thumbnailUrl: string;
+}
+
+// ---- ShareLinks & Join (Module D) ----
+
+export type ShareLinkType = 'static' | 'unique';
+/** static links are 'ACTIVE'; coach invites move PENDING→ACCEPTED/EXPIRED/REVOKED. */
+export type ShareLinkStatus = 'PENDING' | 'ACCEPTED' | 'EXPIRED' | 'REVOKED' | 'ACTIVE';
+
+export interface ShareLink {
+  id: string;
+  type: ShareLinkType;
+  /** Shareable URL, e.g. https://app/join/AB12CD. */
+  url: string;
+  code: string;
+  /** Coach-invite target email; null for static. */
+  targetEmail: string | null;
+  /** ISO-8601; null for static (no expiry). */
+  expiresAt: string | null;
+  useCount: number;
+  /** 1 for unique, null for static. */
+  maxUses: number | null;
+  status: ShareLinkStatus;
+  active: boolean;
+  createdAt: string;
+}
+
+export type JoinStatus = 'VALID' | 'EXPIRED' | 'USED' | 'INVALID';
+
+/** Public resolve payload — minimal, no PII beyond the trainer's display name + branding. */
+export interface JoinResolve {
+  code: string;
+  type: ShareLinkType;
+  status: JoinStatus;
+  trainerDisplayName: string;
+  branding: { logoUrl: string | null; primaryColorHex: string } | null;
+  /** Always true from the server (it can't see the cookie) — branch on the client session instead. */
+  requiresAccount: boolean;
+  /** Email a coach invite is bound to (locked in the register form); null for static. */
+  prefillEmail: string | null;
+}
+
+/** Existing-user association result (authenticated /join consume branch). */
+export interface JoinAssociateResult {
+  association: { trainerId: string; playerProfileId: string; status: 'active' };
+  context: ContextRef;
+}
+
 // ---- Portal branding (Module H) ----
 
 export interface Branding {
