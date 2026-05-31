@@ -16,6 +16,19 @@ export function configureApp(app: INestApplication): void {
   app.use(helmet());
   app.use(cookieParser());
 
+  // CORS must run BEFORE CSRF so a cross-origin request that fails CSRF still carries CORS
+  // headers (otherwise the browser masks the 403 as an opaque CORS error) (M5).
+  const origins = config
+    .get<string>('APP_BASE_URL')
+    ?.split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  if (!origins || origins.length === 0) {
+    // Fail loud rather than reflect any origin with credentials (origin: true + credentials).
+    throw new Error('APP_BASE_URL must be set to an explicit allow-list (CORS + credentials).');
+  }
+  app.enableCors({ origin: origins, credentials: true });
+
   const csrf = app.get(CsrfService);
   app.use(csrf.sessionMiddleware);
   app.use(csrf.protection);
@@ -23,10 +36,6 @@ export function configureApp(app: INestApplication): void {
 
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
-  app.enableCors({
-    origin: config.get<string>('APP_BASE_URL')?.split(',') ?? true,
-    credentials: true,
-  });
 
   app.useGlobalPipes(
     new ValidationPipe({
