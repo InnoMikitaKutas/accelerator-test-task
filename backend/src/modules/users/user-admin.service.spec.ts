@@ -2,6 +2,7 @@ import { ConfigService } from '@nestjs/config';
 import { UserAdminService } from './user-admin.service';
 import { UsersRepository, UserRow } from './users.repository';
 import { PasswordService } from '@shared/auth/password.service';
+import { TokenService } from '@shared/auth/token.service';
 import { AuditService } from '@shared/audit/audit.service';
 import { AppErrorCode } from '@shared/common/errors/error-codes';
 
@@ -44,11 +45,13 @@ describe('UserAdminService.createTrainer', () => {
     } as never;
     audit = { log: jest.fn() } as never;
     const config = { get: (_k: string, d?: unknown) => d } as unknown as ConfigService;
+    const tokens = { revokeAllForUser: jest.fn() } as unknown as TokenService;
     svc = new UserAdminService(
       repo as unknown as UsersRepository,
       passwords as unknown as PasswordService,
       audit as unknown as AuditService,
       config,
+      tokens,
     );
   });
 
@@ -98,7 +101,8 @@ describe('UserAdminService deactivate/reactivate/get', () => {
     } as unknown as UsersRepository;
     const audit = { log: jest.fn() } as unknown as AuditService;
     const config = { get: (_k: string, d?: unknown) => d } as unknown as ConfigService;
-    return new UserAdminService(repo, {} as PasswordService, audit, config);
+    const tokens = { revokeAllForUser: jest.fn() } as unknown as TokenService;
+    return new UserAdminService(repo, {} as PasswordService, audit, config, tokens);
   }
 
   it('get → NOT_FOUND when missing', async () => {
@@ -113,5 +117,23 @@ describe('UserAdminService deactivate/reactivate/get', () => {
     });
     const out = await svc.deactivate('u1', {});
     expect(out.status).toBe('INACTIVE');
+  });
+
+  it('deactivate revokes all of the user’s sessions (immediate lockout)', async () => {
+    const revokeAllForUser = jest.fn().mockResolvedValue(undefined);
+    const repo = {
+      findById: jest.fn().mockResolvedValue(userRow()),
+      setStatus: jest.fn().mockResolvedValue(userRow({ status: 'INACTIVE' })),
+    } as unknown as UsersRepository;
+    const tokens = { revokeAllForUser } as unknown as TokenService;
+    const svc = new UserAdminService(
+      repo,
+      {} as PasswordService,
+      { log: jest.fn() } as unknown as AuditService,
+      { get: (_k: string, d?: unknown) => d } as unknown as ConfigService,
+      tokens,
+    );
+    await svc.deactivate('u1', {});
+    expect(revokeAllForUser).toHaveBeenCalledWith('u1');
   });
 });

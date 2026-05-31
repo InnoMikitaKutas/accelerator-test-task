@@ -4,6 +4,7 @@ import { AppException } from '@shared/common/errors/app.exception';
 import { AppErrorCode } from '@shared/common/errors/error-codes';
 import { Paginated } from '@shared/common/pagination/paginated-response.dto';
 import { PasswordService } from '@shared/auth/password.service';
+import { TokenService } from '@shared/auth/token.service';
 import { AuditService } from '@shared/audit/audit.service';
 import { generateRawToken, hashToken } from '@shared/auth/token-hash';
 import { CreateTrainerDto } from './dto/create-trainer.dto';
@@ -23,6 +24,7 @@ export class UserAdminService {
     private readonly passwords: PasswordService,
     private readonly audit: AuditService,
     private readonly config: ConfigService,
+    private readonly tokens: TokenService,
   ) {}
 
   /** FR-011/BR-002 — create a Trainer (User + TrainerProfile) with invite or temp password. */
@@ -105,6 +107,7 @@ export class UserAdminService {
     const user = await this.repo.findById(id);
     if (!user) throw new AppException(AppErrorCode.NOT_FOUND);
     const updated = await this.repo.setStatus(id, 'INACTIVE');
+    await this.tokens.revokeAllForUser(id); // FR-013/BR-010: immediate lockout, not after ~15min
     await this.audit.log({
       action: 'user.deactivate',
       entityType: 'user',
