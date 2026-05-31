@@ -1,0 +1,41 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--sp-6);
+  max-width: var(--content-max);
+}
+
+/* Mobile drawer: rail slides over content. */
+@media (max-width: 899px) {
+  .body > nav {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    z-index: 60;
+    transform: translateX(-100%);
+    transition: transform var(--dur-2) var(--ease-sprint);
+    box-shadow: var(--shadow-pop);
+  }
+  .railOpen .body > nav {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .body > nav {
+    transition: none;
+  }
+}

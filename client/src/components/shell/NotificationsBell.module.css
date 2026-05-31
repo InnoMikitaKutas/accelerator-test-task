@@ -1,0 +1,81 @@
+.wrap {
+  position: relative;
+}
+
+.bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+}
+.bell:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--brand-text);
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + var(--sp-2));
+  right: 0;
+  z-index: 50;
+  width: 320px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--sp-1);
+}
+
+.empty {
+  padding: var(--sp-5);
+  text-align: center;
+  color: var(--ink-3);
+  font-size: var(--fs-body-s);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  text-align: left;
+}
+.item:hover {
+  background: var(--surface-sunken);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.channel {
+  color: var(--ink-3);
+}
+.message {
+  color: var(--ink);
+  font-size: var(--fs-body-s);
+}

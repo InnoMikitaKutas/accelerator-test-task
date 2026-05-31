@@ -1,0 +1,49 @@
+.rail {
+  width: var(--rail-w);
+  flex-shrink: 0;
+  padding: var(--sp-4) var(--sp-2);
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+
+.rail ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  min-height: 44px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+/* Active = brand lane-indicator + brand-tint well. */
+.active {
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  border-left-color: var(--brand-line);
+  font-weight: 600;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+.collapsed {
+  width: var(--rail-w-icon);
+}
+.collapsed .label {
+  display: none;
+}
