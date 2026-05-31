@@ -1,5 +1,6 @@
 import { encodeCursor, decodeCursor, keysetPage } from './cursor.util';
 import { AppException } from '../errors/app.exception';
+import { AppErrorCode } from '../errors/error-codes';
 
 describe('cursor util', () => {
   it('round-trips encode/decode', () => {
@@ -9,6 +10,23 @@ describe('cursor util', () => {
 
   it('throws VALIDATION_ERROR on a bad cursor', () => {
     expect(() => decodeCursor('not-base64-json')).toThrow(AppException);
+  });
+
+  it('rejects a cursor with an unparseable createdAt', () => {
+    const tampered = Buffer.from(JSON.stringify({ createdAt: 'not-a-date', id: 'x' })).toString('base64url');
+    try {
+      decodeCursor(tampered);
+      fail('should throw');
+    } catch (e) {
+      expect((e as AppException).errorCode).toBe(AppErrorCode.VALIDATION_ERROR);
+    }
+  });
+
+  it('accepts a valid ISO cursor', () => {
+    const ok = Buffer.from(JSON.stringify({ createdAt: '2026-05-29T10:00:00.000Z', id: 'x' })).toString(
+      'base64url',
+    );
+    expect(decodeCursor(ok).id).toBe('x');
   });
 
   it('keysetPage trims to limit and computes hasMore + nextCursor', () => {

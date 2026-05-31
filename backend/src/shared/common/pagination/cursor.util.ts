@@ -14,6 +14,9 @@ export function decodeCursor(s: string): Cursor {
   try {
     const c = JSON.parse(Buffer.from(s, 'base64url').toString('utf8')) as Partial<Cursor>;
     if (typeof c.createdAt !== 'string' || typeof c.id !== 'string') throw new Error('bad');
+    // L6: a tampered createdAt that isn't a real date would become `Invalid Date` downstream and
+    // silently return a wrong/empty page — reject it here instead.
+    if (Number.isNaN(Date.parse(c.createdAt))) throw new Error('bad date');
     return { createdAt: c.createdAt, id: c.id };
   } catch {
     throw new AppException(AppErrorCode.VALIDATION_ERROR, {
