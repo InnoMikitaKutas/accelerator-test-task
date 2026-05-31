@@ -1,0 +1,51 @@
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line-strong);
+  border-left-width: 3px;
+  border-radius: var(--r-sm);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-size: var(--fs-body-s);
+}
+
+.icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.action {
+  align-self: flex-start;
+}
+
+/* Tones map to the semantic token families. */
+.info {
+  border-left-color: var(--info);
+  background: var(--info-tint);
+  color: var(--info-ink);
+}
+.go {
+  border-left-color: var(--go);
+  background: var(--go-tint);
+  color: var(--go-ink);
+}
+.pending {
+  border-left-color: var(--pending);
+  background: var(--pending-tint);
+  color: var(--pending-ink);
+}
+.foul {
+  border-left-color: var(--foul);
+  background: var(--foul-tint);
+  color: var(--foul-ink);
+}

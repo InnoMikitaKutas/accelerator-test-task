@@ -1,0 +1,145 @@
+/* Shared building blocks for the auth form screens. Layout chrome lives in
+   AuthLayout.module.css; tone banners in AuthBanner.module.css. */
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.kicker {
+  color: var(--brand-text);
+}
+
+.sub {
+  color: var(--ink-2);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* Password field with a show/hide affordance overlaid on the input. */
+.passwordWrap {
+  position: relative;
+}
+
+/* Reserve room so the value never slides under the reveal button. */
+.passwordWrap input {
+  padding-right: var(--sp-8);
+}
+
+.reveal {
+  position: absolute;
+  top: 50%;
+  right: var(--sp-2);
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  border-radius: var(--r-sm);
+}
+.reveal:hover {
+  color: var(--ink);
+}
+
+/* "remember me" + forgot link on one baseline. */
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.remember {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--ink-2);
+  font-size: var(--fs-body-s);
+}
+.remember input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+}
+
+.submit {
+  width: 100%;
+  justify-content: center;
+}
+
+.alt {
+  color: var(--ink-3);
+  font-size: var(--fs-body-s);
+  text-align: center;
+}
+
+/* Result panels (verify success, forgot confirmation, token-expired). */
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.panelIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--r-pill);
+  background: var(--surface-sunken);
+  color: var(--ink-2);
+}
+.panelIcon[data-tone='go'] {
+  background: var(--go-tint);
+  color: var(--go-ink);
+}
+.panelIcon[data-tone='foul'] {
+  background: var(--foul-tint);
+  color: var(--foul-ink);
+}
+
+.muted {
+  color: var(--ink-2);
+}
+
+/* Password strength meter. */
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.meterTrack {
+  display: flex;
+  gap: var(--sp-1);
+}
+.meterSeg {
+  height: 4px;
+  flex: 1;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  transition: background var(--dur-1) var(--ease-sprint);
+}
+.meterSeg[data-on='true'][data-tone='foul'] {
+  background: var(--foul);
+}
+.meterSeg[data-on='true'][data-tone='pending'] {
+  background: var(--pending);
+}
+.meterSeg[data-on='true'][data-tone='go'] {
+  background: var(--go);
+}
+.meterLabel {
+  font-size: var(--fs-body-s);
+  color: var(--ink-2);
+}
