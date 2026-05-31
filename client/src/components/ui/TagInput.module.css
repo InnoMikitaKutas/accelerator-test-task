@@ -1,0 +1,59 @@
+.wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  transition: border-color var(--dur-1) var(--ease-sprint);
+}
+.wrap:focus-within {
+  border-color: var(--brand-line);
+  box-shadow: inset 0 -2px 0 var(--brand-line);
+}
+.wrap[data-invalid] {
+  border-color: var(--foul);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-1) 2px var(--sp-2);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body-s);
+  color: var(--ink);
+}
+.remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  border-radius: var(--r-sm);
+}
+.remove:hover {
+  color: var(--foul-ink);
+}
+
+/* Two-class selector (0,2,0) beats FormField's `.field :where(input)` (0,1,0) so the
+   editable field reads as a borderless slot inside the bordered wrapper. */
+.wrap .input {
+  flex: 1 1 8ch;
+  min-width: 8ch;
+  padding: var(--sp-1) 0;
+  border: none;
+  background: transparent;
+  font-size: var(--fs-body);
+}
+.wrap .input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}

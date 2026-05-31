@@ -1,0 +1,189 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-6);
+  max-width: 760px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+}
+.headTitles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* Each settings group is a flat surface card separated by a hairline. */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.sectionTitle {
+  font-size: var(--fs-h3);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+@media (max-width: 560px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Read-only "locked" chips for server-managed fields (FR-038). */
+.readonly {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.readonlyValue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface-sunken);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+}
+
+/* Coach public-visibility toggle + preview (FR-032). */
+.toggleRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-weight: 600;
+  cursor: pointer;
+}
+.toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+.help {
+  font-size: var(--fs-body-s);
+  color: var(--ink-3);
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.previewCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+.previewTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+}
+.previewTags li {
+  padding: 2px var(--sp-2);
+  background: var(--brand-tint);
+  color: var(--brand-text);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body-s);
+}
+.muted {
+  color: var(--ink-3);
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  padding: var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.fieldset legend {
+  padding: 0 var(--sp-1);
+}
+
+.error {
+  font-size: var(--fs-body-s);
+  color: var(--foul-ink);
+}
+
+.formError {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  background: var(--foul-tint);
+  color: var(--foul-ink);
+  border: 1px solid var(--foul);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body-s);
+}
+
+/* Sticky save bar — appears only when dirty (or briefly after a save). */
+.saveBar {
+  position: sticky;
+  bottom: var(--sp-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+}
+.saveNote {
+  font-size: var(--fs-body-s);
+  color: var(--ink-2);
+}
+.saveActions {
+  display: flex;
+  gap: var(--sp-2);
+}
+.savedFlash {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--go-ink);
+  font-weight: 600;
+}
+
+.loadError {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  color: var(--ink-2);
+}
+.loadError h2 {
+  font-size: var(--fs-h3);
+}
+.loadError > div {
+  flex: 1;
+}
