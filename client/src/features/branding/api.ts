@@ -2,17 +2,35 @@ import { api } from '@/services/api';
 import type { Branding } from '@/types/api';
 
 /**
- * Branding endpoints. Only the public resolver (GET /branding/:trainerId) is needed
- * for theming now; the trainer-owned write/upload endpoints arrive in Phase 9.
- * Per-trainer branding is cached (read-heavy) and tagged by trainerId for invalidation.
+ * Branding endpoints (Module H). The public resolver (GET /branding/:trainerId) themes
+ * any client; the trainer-owned read/upload/color endpoints drive BrandingSettings.
+ * Per-trainer branding is cached (read-heavy); a write invalidates BOTH the owner read
+ * and the per-trainer public tag so players re-theme on next resolve.
  */
+const ownTags = (b?: Branding) =>
+  b
+    ? [{ type: 'Branding' as const, id: 'OWN' }, { type: 'Branding' as const, id: b.trainerId }]
+    : [{ type: 'Branding' as const, id: 'OWN' }];
+
 export const brandingApi = api.injectEndpoints({
   endpoints: (build) => ({
     getBrandingByTrainer: build.query<Branding, string>({
       query: (trainerId) => `/branding/${trainerId}`,
       providesTags: (_result, _error, trainerId) => [{ type: 'Branding', id: trainerId }],
     }),
+
+    // Trainer's own branding (FR-037).
+    getOwnBranding: build.query<Branding, void>({
+      query: () => '/trainer/branding',
+      providesTags: (r) => ownTags(r),
+    }),
+
+    // PNG/JPG/SVG ≤2MB; server sanitizes SVG + auto-resizes (C1). multipart passthrough.
+    uploadLogo: build.mutation<Branding, FormData>({
+      query: (body) => ({ url: '/trainer/branding/logo', method: 'POST', body }),
+      invalidatesTags: (r) => ownTags(r),
+    }),
   }),
 });
 
-export const { useGetBrandingByTrainerQuery } = brandingApi;
+export const { useGetBrandingByTrainerQuery, useGetOwnBrandingQuery, useUploadLogoMutation } = brandingApi;
