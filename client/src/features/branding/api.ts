@@ -30,7 +30,18 @@ export const brandingApi = api.injectEndpoints({
       query: (body) => ({ url: '/trainer/branding/logo', method: 'POST', body }),
       invalidatesTags: (r) => ownTags(r),
     }),
+
+    // Set the org primary color (FR-037). Server validates the 6-digit hex.
+    setBrandingColor: build.mutation<Branding, { primaryColorHex: string }>({
+      query: (body) => ({ url: '/trainer/branding', method: 'PUT', body }),
+      invalidatesTags: (r) => ownTags(r),
+    }),
   }),
 });
 
-export const { useGetBrandingByTrainerQuery, useGetOwnBrandingQuery, useUploadLogoMutation } = brandingApi;
+export const {
+  useGetBrandingByTrainerQuery,
+  useGetOwnBrandingQuery,
+  useUploadLogoMutation,
+  useSetBrandingColorMutation,
+} = brandingApi;

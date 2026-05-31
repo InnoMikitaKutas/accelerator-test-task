@@ -6,6 +6,7 @@ import { ImpersonationHistory } from '@/pages/admin/ImpersonationHistory';
 import { ProfileSettings } from '@/pages/ProfileSettings';
 import { ShareLinksManager } from '@/pages/trainer/ShareLinksManager';
 import { TrainerAvailabilityView } from '@/components/availability/TrainerAvailabilityView';
+import { BrandingSettings } from '@/pages/trainer/BrandingSettings';
 import { JoinLanding } from '@/pages/public/JoinLanding';
 import { FamilyRoster } from '@/pages/family/FamilyRoster';
 import { Approvals } from '@/pages/family/Approvals';
@@ -33,6 +34,8 @@ export const appRouter = createBrowserRouter(
     // Trainer Best-Times heatmap — read-only player availability (FR-034). Self-contained
     // view component; Phase 10.1 adds the TRAINER role guard + shell layout.
     { path: '/trainer/availability', element: <TrainerAvailabilityView /> },
+    // Trainer portal branding — live-preview color + logo (FR-037). Phase 10.1 guards.
+    { path: '/branding', element: <BrandingSettings /> },
     // Public, trainer-branded join landing — register or associate (M1, L7).
     { path: '/join/:code', element: <JoinLanding /> },
     // Family / parent-child (Zone-1, PLAYER) — roster + approvals. Phase 10.1 adds guards.
