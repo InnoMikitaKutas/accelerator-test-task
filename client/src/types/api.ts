@@ -198,6 +198,60 @@ export interface JoinAssociateResult {
   context: ContextRef;
 }
 
+// ---- Family / Parent-Child (Module E) ----
+
+export interface TrainerRef {
+  trainerId: string;
+  name: string;
+}
+
+export interface ChildSummary {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  age: number | null;
+  gender: string;
+  /** Whether a constrained child login has been provisioned. */
+  hasLogin: boolean;
+  /** Tokens spendable without parent approval (per-child, default false). */
+  allowTokenWithoutApproval: boolean;
+  trainers: TrainerRef[];
+}
+
+export interface PlayerProfileSummary {
+  profileId: string;
+  firstName: string;
+  lastName: string;
+  isSelf: boolean;
+}
+
+export interface FamilyResponse {
+  self: PlayerProfileSummary | null;
+  children: ChildSummary[];
+  /** Count of PENDING approvals across all children. */
+  pendingApprovals: number;
+}
+
+export type PaymentType = 'USD' | 'TOKEN';
+export type ApprovalStatus = 'PENDING' | 'APPROVED' | 'DENIED' | 'EXPIRED';
+
+export interface ApprovalResponse {
+  id: string;
+  childProfileId: string;
+  childDisplayName: string;
+  trainerId: string;
+  itemRef: string;
+  paymentType: PaymentType;
+  /** Minor units for USD; null for token purchases. */
+  amount: number | null;
+  status: ApprovalStatus;
+  requestedAt: string;
+  /** 48h after requestedAt (BR-008). */
+  expiresAt: string;
+  respondedAt: string | null;
+  parentNote: string | null;
+}
+
 // ---- Portal branding (Module H) ----
 
 export interface Branding {
