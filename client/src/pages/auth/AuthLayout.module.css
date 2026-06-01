@@ -1,0 +1,116 @@
+/* Split auth layout (frontend-design-spec §Auth Screens): left brand panel with a
+   faint lane-chalk motif + a stat line; right = the form on --surface. Platform
+   Cinder, unbranded. Single column on mobile (panel collapses to a slim masthead). */
+
+.layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr);
+  background: var(--bg);
+}
+
+.panel {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--sp-9);
+  padding: var(--sp-10) var(--sp-9);
+  background: var(--ink);
+  color: #fff;
+}
+
+/* Faint chalk "lane lines" — decorative, very low contrast, never behind data. */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    115deg,
+    transparent 0,
+    transparent 78px,
+    rgba(255, 255, 255, 0.05) 78px,
+    rgba(255, 255, 255, 0.05) 80px
+  );
+  pointer-events: none;
+}
+
+.brandMark {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--brand);
+}
+
+.brandMark .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--brand);
+}
+
+.panelBody {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.tagline {
+  max-width: 22ch;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--fs-body-l);
+}
+
+.stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.statValue {
+  color: #fff;
+}
+
+/* Right column — the form, vertically centered on --surface. */
+.formCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--sp-9) var(--sp-6);
+  background: var(--surface);
+}
+
+.formInner {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+@media (max-width: 860px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-5) var(--sp-6);
+  }
+  /* The masthead collapses to a slim bar; drop the secondary copy. */
+  .panelBody,
+  .stat {
+    display: none;
+  }
+  .formCol {
+    padding: var(--sp-7) var(--sp-5);
+    align-items: flex-start;
+  }
+}

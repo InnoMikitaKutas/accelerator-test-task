@@ -1,0 +1,152 @@
+import { Inject, Injectable } from '@nestjs/common';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { DRIZZLE } from '@shared/database/drizzle.constants';
+import { DrizzleDB } from '@shared/database/drizzle.provider';
+import {
+  availability,
+  availabilityOverrides,
+  coachProfiles,
+  playerProfiles,
+  trainerCoachAssociations,
+  trainerPlayerAssociations,
+  trainerProfiles,
+} from '@shared/database/schema';
+import { TenancyService } from '@shared/tenancy/tenancy.service';
+import { TimeSlotDto } from './dto/availability.dto';
+
+export type AvailabilityRow = typeof availability.$inferSelect;
+
+@Injectable()
+export class AvailabilityRepository {
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly tenancy: TenancyService,
+  ) {}
+
+  // availability is NOT tenant-owned (P-4 shared-per-subject) → app pool, ownership enforced in service.
+  getSlots(subjectType: 'player' | 'coach', subjectId: string): Promise<AvailabilityRow[]> {
+    return this.db
+      .select()
+      .from(availability)
+      .where(and(eq(availability.subjectType, subjectType), eq(availability.subjectId, subjectId)));
+  }
+
+  /** Full replace (PUT semantics): delete-all + insert-new in one tx. */
+  async replaceSlots(
+    subjectType: 'player' | 'coach',
+    subjectId: string,
+    slots: TimeSlotDto[],
+  ): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(availability)
+        .where(and(eq(availability.subjectType, subjectType), eq(availability.subjectId, subjectId)));
+      if (slots.length) {
+        await tx.insert(availability).values(
+          slots.map((s) => ({
+            subjectType,
+            subjectId,
+            dayOfWeek: s.dayOfWeek,
+            startTime: s.startTime,
+            endTime: s.endTime,
+          })),
+        );
+      }
+    });
+  }
+
+  getCoachProfile(id: string) {
+    return this.db.select().from(coachProfiles).where(eq(coachProfiles.id, id)).limit(1).then((r) => r[0]);
+  }
+
+  getPlayerProfile(id: string) {
+    // L4: a soft-deleted player is not readable/writable (consistent with the family module).
+    return this.db
+      .select()
+      .from(playerProfiles)
+      .where(and(eq(playerProfiles.id, id), isNull(playerProfiles.deletedAt)))
+      .limit(1)
+      .then((r) => r[0]);
+  }
+
+  /** Active (trainer, player) link — scoped read so RLS permits it for the trainer. */
+  getActiveAssociation(trainerId: string, playerProfileId: string) {
+    return this.tenancy.runScoped(async (tx) => {
+      const [a] = await tx
+        .select()
+        .from(trainerPlayerAssociations)
+        .where(
+          and(
+            eq(trainerPlayerAssociations.trainerId, trainerId),
+            eq(trainerPlayerAssociations.playerProfileId, playerProfileId),
+            eq(trainerPlayerAssociations.status, 'active'),
+          ),
+        )
+        .limit(1);
+      return a;
+    }, trainerId);
+  }
+
+  /** Players associated with a trainer (id + display name) — scoped. */
+  listAssociatedPlayers(trainerId: string): Promise<{ playerProfileId: string; firstName: string; lastName: string }[]> {
+    return this.tenancy.runScoped(async (tx) => {
+      return tx
+        .select({
+          playerProfileId: playerProfiles.id,
+          firstName: playerProfiles.firstName,
+          lastName: playerProfiles.lastName,
+        })
+        .from(trainerPlayerAssociations)
+        .innerJoin(playerProfiles, eq(playerProfiles.id, trainerPlayerAssociations.playerProfileId))
+        .where(
+          and(
+            eq(trainerPlayerAssociations.trainerId, trainerId),
+            eq(trainerPlayerAssociations.status, 'active'),
+            isNull(playerProfiles.deletedAt), // L4: exclude soft-deleted players from the trainer view
+          ),
+        );
+    }, trainerId);
+  }
+
+  getSlotsForSubjects(subjectIds: string[]): Promise<AvailabilityRow[]> {
+    if (subjectIds.length === 0) return Promise.resolve([]);
+    return this.db
+      .select()
+      .from(availability)
+      .where(and(eq(availability.subjectType, 'player'), inArray(availability.subjectId, subjectIds)));
+  }
+
+  createOverride(values: typeof availabilityOverrides.$inferInsert) {
+    return this.tenancy.runScoped(async (tx) => {
+      const [row] = await tx.insert(availabilityOverrides).values(values).returning();
+      return row;
+    });
+  }
+
+  /** Active (trainer, coach) association — scoped so RLS allows the trainer to read it (FR-031/035). */
+  activeCoachAssociationExists(trainerId: string, coachProfileId: string): Promise<boolean> {
+    return this.tenancy.runScoped(async (tx) => {
+      const [row] = await tx
+        .select({ id: trainerCoachAssociations.id })
+        .from(trainerCoachAssociations)
+        .where(
+          and(
+            eq(trainerCoachAssociations.trainerId, trainerId),
+            eq(trainerCoachAssociations.coachProfileId, coachProfileId),
+            eq(trainerCoachAssociations.status, 'active'),
+          ),
+        )
+        .limit(1);
+      return !!row;
+    }, trainerId);
+  }
+
+  trainerProfileById(id: string): Promise<boolean> {
+    return this.db
+      .select({ id: trainerProfiles.id })
+      .from(trainerProfiles)
+      .where(eq(trainerProfiles.id, id))
+      .limit(1)
+      .then((r) => r.length > 0);
+  }
+}

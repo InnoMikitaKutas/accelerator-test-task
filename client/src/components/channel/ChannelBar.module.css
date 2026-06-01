@@ -1,0 +1,105 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-height: 48px;
+  padding: var(--sp-2) var(--sp-4);
+  /* Strip background = the active trainer's brand tint (set by ThemeProvider scope). */
+  background: var(--brand-tint);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.tunedTo {
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.subjectPicker {
+  position: relative;
+}
+
+.subjectButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.subjectMenu {
+  position: absolute;
+  top: calc(100% + var(--sp-1));
+  left: 0;
+  z-index: 50;
+  min-width: 180px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-pop);
+  padding: var(--sp-1);
+}
+
+.subjectItem {
+  display: flex;
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  text-align: left;
+  color: var(--ink);
+}
+.subjectItem:hover,
+.subjectItem[aria-checked='true'] {
+  background: var(--brand-tint);
+  color: var(--brand-text);
+}
+
+.tag {
+  color: var(--ink-3);
+}
+
+.tabs {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-1);
+}
+
+.tab {
+  position: relative;
+  padding: var(--sp-2) var(--sp-3);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--ink-2);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: border-color var(--dur-2) var(--ease-sprint);
+}
+.tab:hover {
+  color: var(--ink);
+}
+
+/* The sliding chalk lane-indicator. */
+.tabActive {
+  color: var(--brand-text);
+  border-bottom-color: var(--brand-line);
+  font-weight: 600;
+}
+
+.connectPrompt {
+  color: var(--brand-text);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+}

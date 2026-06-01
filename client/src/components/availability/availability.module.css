@@ -1,0 +1,456 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-6);
+  max-width: var(--content-max);
+}
+
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+.headTitles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+/* BR-012 — advisory framing, set apart but unobtrusive. */
+.advisory {
+  margin-top: calc(var(--sp-3) * -1);
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--info);
+  background: var(--info-tint);
+  color: var(--ink-2);
+  font-size: var(--fs-body-s);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+}
+
+/* ---- Filter toolbar (mirrors the Users directory conventions) ---- */
+.toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+.search {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+.search input {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+}
+.search input:focus-visible {
+  outline: none;
+  border-color: var(--brand-line);
+  box-shadow: inset 0 -2px 0 var(--brand-line);
+}
+.filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.filter select,
+.filter input {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+}
+
+/* Dismissible active-filter chips. */
+.chips {
+  display: flex;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px var(--sp-1) 2px var(--sp-3);
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-body-s);
+  color: var(--ink-2);
+}
+.chipX {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  border-radius: var(--r-pill);
+}
+.chipX:hover {
+  color: var(--ink);
+}
+
+/* ---- Heatmap matrix ---- */
+.heatWrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+.heat {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-body-s);
+}
+.heat th,
+.heat td {
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  padding: var(--sp-2) var(--sp-3);
+  text-align: center;
+}
+.heat th:last-child,
+.heat td:last-child {
+  border-right: none;
+}
+.heat tbody tr:last-child th,
+.heat tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Sticky first column so player names stay visible while the week scrolls (md). */
+.corner,
+.playerCell,
+.aggLabel {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  white-space: nowrap;
+}
+.corner {
+  background: var(--surface-sunken);
+}
+.dayHead {
+  background: var(--surface-sunken);
+  min-width: 52px;
+}
+.abbr {
+  text-decoration: none;
+  cursor: help;
+}
+
+/* Aggregate "Players free" density row. */
+.aggRow {
+  background: var(--surface-sunken);
+}
+.aggLabel {
+  background: var(--surface-sunken);
+}
+.aggCell {
+  color: var(--ink-2);
+}
+
+.row .playerCell {
+  background: var(--surface);
+}
+.row:hover {
+  background: var(--brand-tint);
+}
+.row:hover .playerCell {
+  background: var(--brand-tint);
+}
+.playerInner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.playerName {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Per-player "Best Times" summary chip. */
+.btChip {
+  display: inline-block;
+  padding: 1px var(--sp-2);
+  background: var(--go-tint);
+  color: var(--go-ink);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+.btChipEmpty {
+  background: var(--surface-sunken);
+  color: var(--ink-3);
+}
+
+/* Heat cells. Intensity is reinforced by the visible count + SR text (never color
+   alone). Steps are explicit rgba of --go so they read in both themes. */
+.cell {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+.lvl1 {
+  background: rgba(30, 142, 85, 0.14);
+  color: var(--ink-2);
+}
+.lvl2 {
+  background: rgba(30, 142, 85, 0.34);
+  color: var(--ink);
+}
+.lvl3 {
+  background: rgba(30, 142, 85, 0.56);
+  /* --ink (not --go-ink) so the count stays legible on the green fill in both themes. */
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.more {
+  display: flex;
+  justify-content: center;
+  padding: var(--sp-2);
+}
+
+/* ===== WeeklyAvailabilityGrid + list-mode (Task 8.2) ===== */
+.gridPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-6);
+  max-width: var(--content-max);
+}
+
+.gridActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+/* Grid/List segmented toggle. */
+.viewToggle {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.viewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-3);
+  border: none;
+  background: var(--surface);
+  color: var(--ink-2);
+  font-size: var(--fs-body-s);
+  font-weight: 600;
+}
+.viewBtn[aria-pressed='true'] {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+.viewBtn + .viewBtn {
+  border-left: 1px solid var(--line-strong);
+}
+
+/* Conflict (server-rejected overlaps) + soft overlap warning. */
+.conflict {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--foul);
+  background: var(--foul-tint);
+  color: var(--foul-ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-body-s);
+}
+.warnNote {
+  padding: var(--sp-2) var(--sp-3);
+  border-left: 2px solid var(--pending);
+  background: var(--pending-tint);
+  color: var(--pending-ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-body-s);
+}
+
+/* The training-board grid. Each row is its own CSS grid with a shared column
+   template, so columns line up without display:contents. <760px → horizontal scroll. */
+.gridWrap {
+  overflow-x: auto;
+}
+.grid {
+  display: flex;
+  flex-direction: column;
+  min-width: 520px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.gridRow {
+  display: grid;
+  grid-template-columns: 56px repeat(7, minmax(44px, 1fr));
+}
+.gridRow + .gridRow {
+  border-top: 1px solid var(--line);
+}
+.timeHead,
+.gridHeadDay {
+  padding: var(--sp-2);
+  text-align: center;
+  background: var(--surface-sunken);
+}
+.timeHead {
+  text-align: left;
+}
+.timeCell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--sp-1) var(--sp-2);
+  background: var(--surface-sunken);
+  border-right: 1px solid var(--line);
+  color: var(--ink-3);
+}
+.gridCell {
+  min-height: 34px;
+  padding: 0;
+  border: none;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+.gridCell:last-child {
+  border-right: none;
+}
+.gridCell:hover {
+  background: var(--go-tint);
+}
+.gridCell:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+/* Painted slot — go-tint fill + a left lane-edge, echoing the chalk grid. */
+.painted {
+  background: var(--go-tint);
+  box-shadow: inset 3px 0 0 var(--go);
+}
+.painted:hover {
+  background: rgba(30, 142, 85, 0.24);
+}
+
+/* List-mode (the SR-primary path). */
+.listMode {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.slotList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+.slotItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+}
+.slotFlagged {
+  border-color: var(--foul);
+  background: var(--foul-tint);
+}
+.slotDay {
+  min-width: 84px;
+  font-weight: 600;
+}
+.slotWarn {
+  color: var(--foul-ink);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+}
+.slotRemove {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  border-radius: var(--r-sm);
+}
+.slotRemove:hover {
+  color: var(--foul-ink);
+  border-color: var(--line);
+  background: var(--surface-sunken);
+}
+.addRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  padding: var(--sp-3);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+}
+.addRow select,
+.addRow input {
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+}
+
+/* ===== ConflictOverrideModal (Task 8.4) ===== */
+.overrideWarn {
+  display: flex;
+  gap: var(--sp-2);
+  padding: var(--sp-3);
+  margin-bottom: var(--sp-3);
+  border-left: 2px solid var(--pending);
+  background: var(--pending-tint);
+  color: var(--pending-ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: var(--fs-body-s);
+}
+.overrideWarn svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.reasonInput {
+  width: 100%;
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  font-size: var(--fs-body);
+  resize: vertical;
+}
+.reasonInput:focus-visible {
+  outline: none;
+  border-color: var(--brand-line);
+  box-shadow: inset 0 -2px 0 var(--brand-line);
+}

@@ -1,0 +1,173 @@
+/**
+ * Global base + reset. Consumes tokens.css.
+ * Borders are the primary separator ("chalk lines"); surfaces are flat (no
+ * ambient shadows — those are reserved for overlays via --shadow-pop).
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Tabular numerals everywhere data lives. */
+table,
+[data-tabular],
+.u-stat,
+.u-mono,
+input,
+time {
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-tight);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--fs-h1);
+}
+h2 {
+  font-size: var(--fs-h2);
+}
+h3 {
+  font-size: var(--fs-h3);
+}
+
+p {
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--brand-text);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+ul,
+ol {
+  list-style: none;
+  padding: 0;
+}
+
+::selection {
+  background: var(--brand-tint);
+}
+
+/* ---- Typographic voices ---- */
+.u-display-xl,
+.u-display-l,
+.u-stat {
+  font-family: var(--font-display);
+  font-stretch: var(--stretch-expanded);
+  line-height: var(--lh-display);
+}
+.u-display-xl {
+  font-size: var(--fs-display-xl);
+  font-weight: 800;
+  letter-spacing: var(--ls-tight);
+}
+.u-display-l {
+  font-size: var(--fs-display-l);
+  font-weight: 700;
+  letter-spacing: var(--ls-tight);
+}
+.u-stat {
+  font-size: var(--fs-stat);
+  font-weight: 800;
+}
+.u-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-label);
+  font-weight: 600;
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.u-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-mono);
+  font-weight: 500;
+}
+
+/* ---- Focus: visible 2px ink ring + 2px offset; 3px brand inside branded zones ---- */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+.branded :focus-visible {
+  outline: 3px solid var(--brand-line);
+}
+
+/* Screen-reader-only utility. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- Reduced motion: kill wipe/stagger/glow; keep only short opacity ---- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

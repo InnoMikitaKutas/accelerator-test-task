@@ -1,0 +1,67 @@
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  width: min(360px, calc(100vw - var(--sp-8)));
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--info);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-pop);
+  animation: slide-in var(--dur-2) var(--ease-settle);
+}
+
+.info {
+  border-left-color: var(--info);
+}
+.go {
+  border-left-color: var(--go);
+}
+.pending {
+  border-left-color: var(--pending);
+}
+.foul {
+  border-left-color: var(--foul);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.channel {
+  color: var(--ink-3);
+}
+
+.message {
+  color: var(--ink);
+  font-size: var(--fs-body-s);
+}
+
+.close {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: var(--ink-3);
+  border-radius: var(--r-sm);
+}
+.close:hover {
+  color: var(--ink);
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    animation: none;
+  }
+}
